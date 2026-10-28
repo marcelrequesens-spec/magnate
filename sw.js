@@ -1,5 +1,5 @@
 // Guarda la app para que funcione sin conexión. Cambia VERSION al publicar una actualización.
-const VERSION = 'magnate-v3';
+const VERSION = 'magnate-v3-icon2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
