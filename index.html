@@ -79,10 +79,10 @@ html.wide #app{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto
 .sp .bdg .ic{width:10px;height:10px}
 
 /* ---------- escenario y cámara ---------- */
-#stage{grid-area:stage;position:relative;overflow:hidden;border-radius:22px;border:1px solid var(--line);background:radial-gradient(120% 90% at 50% 40%,#1d3240 0%,#101b25 70%);touch-action:none;min-height:0}
+#stage{grid-area:stage;position:relative;overflow:hidden;border-radius:22px;border:1px solid var(--line);background:radial-gradient(120% 90% at 50% 40%,var(--st-a) 0%,var(--st-b) 70%);touch-action:none;min-height:0}
 #cam{position:absolute;inset:0;cursor:grab}
 #cam.drag{cursor:grabbing}
-#board{position:absolute;left:0;top:0;transform-origin:0 0;width:var(--S);height:var(--S);display:grid;grid-template-columns:var(--k) repeat(9,var(--c)) var(--k);grid-template-rows:var(--k) repeat(9,var(--c)) var(--k);background:var(--board);border:4px solid #17211c;box-shadow:0 40px 90px -10px rgba(0,0,0,.7),0 0 0 14px #20302a,0 0 0 16px #0a120f;border-radius:10px;color:var(--board-ink);font-family:var(--f-board)}
+#board{position:absolute;left:0;top:0;transform-origin:0 0;width:var(--S);height:var(--S);display:grid;grid-template-columns:var(--k) repeat(9,var(--c)) var(--k);grid-template-rows:var(--k) repeat(9,var(--c)) var(--k);background:var(--board);border:4px solid #17211c;box-shadow:0 40px 90px -10px rgba(0,0,0,.7),0 0 0 14px var(--frame),0 0 0 16px #0a120f;border-radius:10px;color:var(--board-ink);font-family:var(--f-board)}
 .sq{position:relative;overflow:hidden;box-shadow:inset 0 0 0 .6px var(--board-line);cursor:pointer;background:var(--board)}
 .sq:hover{background:#eff6ec}
 .in{position:absolute;left:50%;top:50%;width:var(--c);height:var(--k);transform:translate(-50%,-50%) rotate(var(--rot,0deg));display:flex;flex-direction:column;align-items:center;text-align:center}
@@ -145,7 +145,7 @@ html.wide #app{grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto
 .dpair{display:flex;gap:30px;perspective:900px}
 .cube{--sz:78px;--z:39px;width:var(--sz);height:var(--sz);position:relative;transform-style:preserve-3d;transition:transform 1.05s cubic-bezier(.17,.8,.25,1)}
 html.wide .cube{--sz:96px;--z:48px}
-.face{position:absolute;inset:0;background:linear-gradient(145deg,#ffffff,#ecebe3);border-radius:18%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07),inset 0 -5px 10px rgba(0,0,0,.08);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face{position:absolute;inset:0;background:linear-gradient(145deg,var(--die-a),var(--die-b));border-radius:18%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07),inset 0 -5px 10px rgba(0,0,0,.08);backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .f1{transform:translateZ(var(--z))}.f6{transform:rotateY(180deg) translateZ(var(--z))}.f3{transform:rotateY(90deg) translateZ(var(--z))}.f4{transform:rotateY(-90deg) translateZ(var(--z))}.f5{transform:rotateX(90deg) translateZ(var(--z))}.f2{transform:rotateX(-90deg) translateZ(var(--z))}
 .dsum{font-family:var(--f-display);font-weight:800;font-size:44px;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6);opacity:0;transform:scale(.6);transition:opacity .25s,transform .35s var(--ease);letter-spacing:-.02em}
 .dsum.on{opacity:1;transform:none}
@@ -168,9 +168,9 @@ html.wide .cube{--sz:96px;--z:48px}
 #evMain.pop{animation:evpop .35s ease-out}
 @keyframes evpop{from{opacity:.2;transform:translateY(3px)}}
 .dk-dice{display:flex;align-items:center;gap:5px}
-.die{--dsz:30px;width:var(--dsz);height:var(--dsz);flex:none;background:#fbfaf5;border-radius:22%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:calc(var(--dsz)*.13);box-shadow:inset 0 -2px 0 #d3d0c2,0 3px 8px rgba(0,0,0,.35)}
+.die{--dsz:30px;width:var(--dsz);height:var(--dsz);flex:none;background:linear-gradient(145deg,var(--die-a),var(--die-b));border-radius:22%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:calc(var(--dsz)*.13);box-shadow:inset 0 -2px 0 #d3d0c2,0 3px 8px rgba(0,0,0,.35)}
 .die.sm{--dsz:28px}
-.pip{width:74%;height:74%;margin:auto;border-radius:50%;background:#1d1d1d;visibility:hidden}
+.pip{width:74%;height:74%;margin:auto;border-radius:50%;background:var(--pip-c);visibility:hidden}
 .pip.on{visibility:visible}
 .die.roll{animation:shake .3s linear infinite}
 @keyframes shake{25%{transform:rotate(14deg) translateY(-3px)}50%{transform:rotate(-9deg)}75%{transform:rotate(7deg) translateY(-2px)}}
@@ -422,6 +422,80 @@ html.pwa .start{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bo
 .sacts .btn{width:100%}
 
 
+
+/* ---------- temas y dados ---------- */
+:root{--st-a:#1d3240;--st-b:#101b25;--frame:#20302a;--die-a:#ffffff;--die-b:#ecebe3;--pip-c:#1d1d1d}
+html[data-theme="atardecer"]{--st-a:#57303a;--st-b:#1b1016;--frame:#3b2420}
+html[data-theme="bosque"]{--st-a:#1f4a35;--st-b:#0c1d14;--frame:#123222}
+html[data-theme="mar"]{--st-a:#1a4572;--st-b:#0a1626;--frame:#163150}
+html[data-dice="oro"]{--die-a:#ffe9a8;--die-b:#e0ac4c;--pip-c:#3a2606}
+html[data-dice="rojo"]{--die-a:#ee6a5c;--die-b:#b52a20;--pip-c:#fff}
+html[data-dice="negro"]{--die-a:#3f474f;--die-b:#16191d;--pip-c:#f3cb7b}
+/* ---------- Imperio ---------- */
+.pill.boss{background:#3a3016;color:var(--brass-hi)}.pill.debt{background:#3d2430;color:#ffb8c9}
+#evChip{position:absolute;left:10px;bottom:10px;z-index:5;max-width:min(300px,calc(100% - 70px));display:flex;gap:8px;align-items:flex-start;padding:7px 11px;border-radius:12px;cursor:pointer;background:rgba(16,26,35,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--brass);font-size:12.5px;line-height:1.35;color:var(--muted)}
+#evChip .ic{color:var(--brass-hi);width:17px;height:17px;margin-top:1px}
+#evChip b{display:block;color:var(--ink);font-size:12.5px}
+#evChip span span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px}
+.ic.st.on{color:var(--brass-hi)}.ic.lv.on{color:var(--bad)}
+.hubwrap{position:relative;margin:0 auto;width:min(760px,100%);display:flex;flex-direction:column;gap:16px}
+.hub-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hub-title small{display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:800}
+.hub-title b{display:block;font-family:var(--f-display);font-weight:800;font-size:36px;letter-spacing:-.04em;line-height:1}
+.hub-stats{margin-left:auto;display:flex;gap:8px}
+.hstat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;min-width:120px}
+.hstat small{display:block;font-size:10.5px;color:var(--muted);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.hstat b{font-family:var(--f-display);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.xpbar{height:6px;border-radius:6px;background:var(--surface-3);margin-top:5px;overflow:hidden}.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--brass),var(--brass-hi))}
+.daily{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:linear-gradient(120deg,#3d3216,#1d2b38);border:1px solid var(--brass);color:var(--ink);text-align:left;cursor:pointer;font-family:inherit;animation:pulseBtn 2.4s ease-in-out infinite}
+.daily .ic{width:32px;height:32px;color:var(--brass-hi)}
+.daily b{display:block;font-family:var(--f-display);font-size:17px}.daily small{color:var(--muted);font-size:12.5px}
+.hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hbtn{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font:700 13px var(--f-ui);cursor:pointer}
+.hbtn .ic{width:24px;height:24px;color:var(--brass)}
+.hbtn .note{font-size:11px}
+.hbtn .badge{position:absolute;top:7px;right:7px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-size:11px;display:grid;place-items:center;padding:0 5px}
+.season{display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap}
+.season b{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:-.02em}
+.season span{color:var(--muted);font-size:13px}
+.zpath{position:relative;display:flex;flex-direction:column;gap:10px;padding-left:26px}
+.zpath::before{content:"";position:absolute;left:10px;top:14px;bottom:14px;width:3px;border-radius:3px;background:linear-gradient(var(--brass),var(--line-2))}
+.zcard{position:relative;display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-align:left;cursor:pointer;font-family:inherit;width:100%;transition:transform .15s var(--ease)}
+.zcard:active{transform:scale(.985)}
+.zcard::before{content:"";position:absolute;left:-22px;top:50%;width:13px;height:13px;border-radius:50%;background:var(--surface-3);border:3px solid var(--bg);transform:translateY(-50%)}
+.zcard.done::before{background:var(--good)}.zcard.cur::before{background:var(--brass);box-shadow:0 0 0 5px rgba(224,172,76,.25)}
+.zcard.cur{border-color:var(--brass);background:linear-gradient(120deg,#2e2b1b,var(--surface))}
+.zcard.locked{opacity:.45;cursor:not-allowed}
+.znum{width:42px;height:42px;border-radius:12px;background:var(--surface-3);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:18px;flex:none}
+.znum .ic{width:18px;height:18px;color:var(--muted)}
+.zinfo{flex:1;min-width:0}
+.zinfo b{display:block;font-family:var(--f-display);font-weight:800;font-size:18px;letter-spacing:-.01em}
+.zinfo small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.zside{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.stars,.lives{display:inline-flex;gap:2px;vertical-align:middle}.stars .ic{width:17px;height:17px;color:var(--line-2)}.lives .ic{width:14px;height:14px;color:var(--line-2)}
+.bosscard{display:flex;gap:14px;align-items:center;padding:14px;border-radius:18px;background:linear-gradient(120deg,#3a2422,var(--surface-2));border:1px solid #6b3a33}
+.bosscard small{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--bad);font-weight:800}
+.bosscard b{display:block;font-family:var(--f-display);font-weight:800;font-size:21px;letter-spacing:-.02em}
+.tree{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.branch{background:var(--surface-2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.branch h4{margin:0 0 2px;display:flex;align-items:center;gap:7px;font-family:var(--f-display);font-size:16px}
+.branch h4 .ic{color:var(--brass)}
+.node{display:flex;align-items:flex-start;gap:7px;padding:8px;border-radius:10px;background:var(--bg);font-size:12.5px;color:var(--muted);border:1px solid transparent;line-height:1.35}
+.node .ic{width:14px;height:14px;margin-top:1px}
+.node.on{color:var(--ink);background:#2e2b1b;border-color:var(--brass)}.node.on .ic{color:var(--brass-hi)}
+.alb{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.alb span{font-size:11.5px;padding:3px 8px;border-radius:8px;background:var(--surface-2);color:var(--faint);border-left:4px solid var(--line-2)}
+.alb span.on{color:var(--ink);border-left-color:var(--cc);background:var(--surface-3)}
+.ach>.ic{width:22px;height:22px;color:var(--faint)}.ach.on>.ic{color:var(--brass-hi)}.ach:not(.on) .nm2{color:var(--muted)}
+.lkgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lk{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;font-family:inherit;text-align:center}
+.lk b{font-size:13px}.lk small{font-size:11px;color:var(--muted)}
+.lk.on{border-color:var(--brass);background:#2e2b1b}.lk:disabled{opacity:.45;cursor:not-allowed}
+.lk .sample{width:44px;height:30px;border-radius:8px}
+.lk-theme-noche .sample{background:radial-gradient(#1d3240,#101b25)}.lk-theme-atardecer .sample{background:radial-gradient(#57303a,#1b1016)}.lk-theme-bosque .sample{background:radial-gradient(#1f4a35,#0c1d14)}.lk-theme-mar .sample{background:radial-gradient(#1a4572,#0a1626)}
+.lk-dice-clasico .sample{background:linear-gradient(145deg,#fff,#ecebe3)}.lk-dice-rojo .sample{background:linear-gradient(145deg,#ee6a5c,#b52a20)}.lk-dice-oro .sample{background:linear-gradient(145deg,#ffe9a8,#e0ac4c)}.lk-dice-negro .sample{background:linear-gradient(145deg,#3f474f,#16191d)}
+.tokpick button:disabled{opacity:.4;cursor:not-allowed}
+@media (max-width:560px){.tree{grid-template-columns:1fr}.lkgrid{grid-template-columns:repeat(2,1fr)}.hub-stats{margin-left:0;width:100%}.hstat{flex:1}}
 /* ---------- El Golpe ---------- */
 #loot{background:var(--bg);border:1px solid var(--line-2);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;animation:tin .35s var(--ease)}
 .lt-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -498,6 +572,7 @@ html:not(.wide) #dock:has(#loot:not([hidden])) #tabs{display:none}
       <button class="cb" id="cIn" type="button" title="Acercar" aria-label="Acercar"><svg class="ic"><use href="#i-plus"/></svg></button>
       <button class="cb" id="cOut" type="button" title="Alejar" aria-label="Alejar"><svg class="ic"><use href="#i-minus"/></svg></button>
     </div>
+    <div id="evChip" hidden></div>
     <div class="ptag" id="pausedTag" hidden>En pausa</div>
   </section>
   <footer id="dock">
@@ -550,6 +625,8 @@ html:not(.wide) #dock:has(#loot:not([hidden])) #tabs{display:none}
     </div>
   </div>
 </div>
+
+<div id="hub" class="start" hidden><div class="hubwrap" id="hubBody"></div></div>
 
 <script>
 'use strict';
@@ -607,6 +684,15 @@ const TOKSVG={
   boat:'<path d="M11 2.5v12.6H4.1z"/><path d="M13 5.3l6.6 9.8H13z"/><path d="M2.4 17h19.2l-2.7 4.2H5.1z"/>',
 };
 const ICONS_X={
+  heart:'<path d="M12 20s-7-4.4-8.6-9A4.6 4.6 0 0 1 12 6.6 4.6 4.6 0 0 1 20.6 11C19 15.6 12 20 12 20z"/>',
+  heartF:'<path fill="currentColor" stroke="none" d="M12 20s-7-4.4-8.6-9A4.6 4.6 0 0 1 12 6.6 4.6 4.6 0 0 1 20.6 11C19 15.6 12 20 12 20z"/>',
+  starF:'<path fill="currentColor" stroke="none" d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9l-5.3 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  briefcase:'<rect x="3.5" y="7" width="17" height="12.5" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17"/>',
+  chart:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  palette:'<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 1.8-1 1.4-2-.5-1.1.3-2.3 1.5-2.3H17a3.5 3.5 0 0 0 3.5-3.5c0-5.2-3.8-9.2-8.5-9.2z"/><circle cx="7.8" cy="11" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.4" r="1.1" fill="currentColor"/><circle cx="15" cy="7.6" r="1.1" fill="currentColor"/>',
+  medal:'<circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 3.5 10.5 9M15.5 3.5 13.5 9"/><path d="M12 12.2l.8 1.6 1.7.3-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.3z"/>',
+  gift:'<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20"/><path d="M12 8.5S10.5 4 8.2 4.6C6.4 5.1 7 8.5 12 8.5zM12 8.5S13.5 4 15.8 4.6C17.6 5.1 17 8.5 12 8.5z"/>',
   menu:'<path d="M4 7h16M4 12h16M4 17h10"/>',
   target:'<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
   board:'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 8.5h17M3.5 15.5h17M8.5 3.5v17M15.5 3.5v17"/>',
@@ -617,6 +703,12 @@ const ICONS_X={
   plusSq:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/>',
 };
 Object.assign(ICONS,ICONS_X);
+Object.assign(TOKSVG,{
+  star:'<path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"/>',
+  bolt:'<path d="M13.6 2 5 13.5h6L9.8 22 19 10.2h-6.2z"/>',
+  rocket:'<path d="M12 2c3.5 2.2 5 5.8 5 9.5V15l2.5 2.5V20l-4-1.5h-7l-4 1.5v-2.5L7 15v-3.5C7 7.8 8.5 4.2 12 2z"/><circle cx="12" cy="10" r="2" fill="rgba(0,0,0,.3)"/>',
+  umbrella:'<path d="M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z"/><path d="M12 12v6.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>',
+});
 (function(){
   let s='<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true">';
   for(const k in ICONS)s+=`<symbol id="i-${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</symbol>`;
@@ -624,7 +716,7 @@ Object.assign(ICONS,ICONS_X);
   document.body.insertAdjacentHTML('afterbegin',s+'</svg>');
 })();
 const ic=(n,c='')=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
-const TOKENS=[{id:'hat',n:'Sombrero'},{id:'car',n:'Coche'},{id:'anchor',n:'Ancla'},{id:'crown',n:'Corona'},{id:'key',n:'Llave'},{id:'rook',n:'Torre'},{id:'gem',n:'Diamante'},{id:'boat',n:'Velero'}];
+const TOKENS=[{id:'hat',n:'Sombrero'},{id:'car',n:'Coche'},{id:'anchor',n:'Ancla'},{id:'crown',n:'Corona'},{id:'key',n:'Llave'},{id:'rook',n:'Torre'},{id:'gem',n:'Diamante'},{id:'boat',n:'Velero'},{id:'star',n:'Estrella',lv:3},{id:'bolt',n:'Rayo',lv:6},{id:'rocket',n:'Cohete',lv:9},{id:'umbrella',n:'Paraguas',lv:12}];
 const disc=(p,c='')=>`<span class="disc ${c}" style="--pc:${p.color}"><svg aria-hidden="true"><use href="#t-${p.token}"/></svg></span>`;
 
 /* =================== utilidades =================== */
@@ -799,7 +891,8 @@ function loadSave(){try{const s=localStorage.getItem(SAVE_KEY);const g=s?JSON.pa
 function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 
 /* =================== reglas =================== */
-function rentOf(i,dice,mode){
+function rentOf(i,dice,mode){const r=rentBase(i,dice,mode);return isImp()?impRent(i,r):r}
+function rentBase(i,dice,mode){
   const sq=BOARD[i],st=G.props[i];
   if(st.owner==null||st.mort)return 0;
   if(sq.type==='street'){if(st.houses)return sq.rent[st.houses];return ownsAll(st.owner,sq.group)?sq.rent[0]*2:sq.rent[0]}
@@ -817,10 +910,10 @@ function buildErr(i){
   if(st.houses>Math.min(...g.idx.map(j=>G.props[j].houses)))return 'Hay que construir de forma uniforme';
   if(st.houses===4&&G.hotels<1)return 'No quedan hoteles en el banco';
   if(st.houses<4&&G.houses<1)return 'No quedan casas en el banco';
-  if(P(st.owner).money<g.house)return 'No tienes dinero suficiente';
+  if(P(st.owner).money<houseCost(sq.group,st.owner))return 'No tienes dinero suficiente';
   return '';
 }
-function build(i){const st=G.props[i],g=GROUPS[BOARD[i].group];P(st.owner).money-=g.house;if(st.houses===4){G.hotels--;G.houses+=4}else G.houses--;st.houses++}
+function build(i){const st=G.props[i];P(st.owner).money-=houseCost(BOARD[i].group,st.owner);if(st.houses===4){G.hotels--;G.houses+=4}else G.houses--;st.houses++}
 function sellErr(i){
   const sq=BOARD[i],st=G.props[i];
   if(sq.type!=='street'||!st.houses)return 'No hay edificios';
@@ -907,7 +1000,7 @@ function buildBoard(){
     b.appendChild(c);cells[i]=c;
   });
   const center=el('div');center.id='center';
-  center.innerHTML=`<div class="deck d-chest"><svg><use href="#i-chest"/></svg>CAJA DE<br>COMUNIDAD</div><div class="deck d-chance"><span class="q">?</span>SUERTE</div><div class="plaque"><b>MAGNATE</b><i>BARCELONA</i></div>`;
+  center.innerHTML=`<div class="deck d-chest"><svg><use href="#i-chest"/></svg>CAJA DE<br>COMUNIDAD</div><div class="deck d-chance"><span class="q">?</span>SUERTE</div><div class="plaque"><b>MAGNATE</b><i>${isImp()?esc(zoneOf(G.imp.zi).name.toUpperCase()):'BARCELONA'}</i></div>`;
   b.appendChild(center);
   const tk=el('div');tk.id='tokens';b.appendChild(tk);
 }
@@ -988,6 +1081,7 @@ function renderPlayers(){
     if(p.out)st+=`<span class="pill out">${ic('down')}Quiebra</span>`;
     if(p.jail)st+=`<span class="pill jail">${ic('lock')}Cárcel</span>`;
     if(p.cards.length)st+=`<span class="pill key">${ic('key')}Libre ×${p.cards.length}</span>`;
+    st+=impPills(p);
     r.querySelector('.pstat').innerHTML=st;
     let ch='';
     for(const g of GORDER){const own=GROUPS[g].idx.filter(i=>G.props[i].owner===p.id);if(!own.length)continue;ch+=own.map(i=>`<i class="chip${G.props[i].mort?' m':''}${G.props[i].houses?' b':''}" style="--cc:${GROUPS[g].c}" title="${BOARD[i].name}"></i>`).join('')+'<i class="cgap"></i>'}
@@ -1013,8 +1107,11 @@ function render(){
   const p=G.players[G.turn];
   $('#dkDisc').innerHTML=G.started?disc(p,'lg'):'';
   $('#turnLbl').innerHTML=G.over?'Partida terminada':!G.started?'Sorteo de turno':p.bot?`Turno de ${esc(p.name)}`:'Tu turno';
-  $('#round').textContent=(G.mode==='golpe'?'El Golpe · ':'')+(G.started?`Ronda ${G.round}`:'Inicio');
+  $('#round').textContent=(G.mode==='golpe'?'El Golpe · ':G.mode==='imperio'&&G.imp?zoneOf(G.imp.zi).name+' · ':'')+(G.started?`Ronda ${G.round}`:'Inicio');
   $('#pausedTag').hidden=!PAUSED;
+  if(isImp())G.imp.maxRails=Math.max(G.imp.maxRails,GROUPS.rail.idx.filter(j=>G.props[j].owner===0).length);
+  if(G.track&&G.players[0]&&!G.players[0].out)G.track.maxNW=Math.max(G.track.maxNW||0,netWorth(G.players[0]));
+  impRender();
 }
 
 /* =================== modales =================== */
@@ -1094,7 +1191,7 @@ function openManage(p,opt={}){
   const m=modal({title:'Tus propiedades',cls:'wide',onClose:opt.onClose,help:'construir',closable:true});
   const draw=()=>{
     const mine=propsOf(p.id);
-    let h=`<div class="mtop"><span>Dinero: <b class="gold">${fmt(p.money)}</b></span><span>Casas en el banco: <b>${G.houses}</b></span><span>Hoteles: <b>${G.hotels}</b></span>${opt.need?`<span>Necesitas: <b>${fmt(opt.need)}</b></span>`:''}</div>`;
+    let h=`<div class="mtop"><span>Dinero: <b class="gold">${fmt(p.money)}</b></span><span>Casas en el banco: <b>${G.houses}</b></span><span>Hoteles: <b>${G.hotels}</b></span>${opt.need?`<span>Necesitas: <b>${fmt(opt.need)}</b></span>`:''}</div>${isImp()?impManageHTML(p):''}`;
     if(!mine.length)h+='<p class="note" style="margin-top:12px">Todavía no tienes propiedades. Cuando caigas en una sin dueño podrás comprarla.</p>';
     for(const g of GORDER){
       const ids=GROUPS[g].idx.filter(i=>G.props[i].owner===p.id);if(!ids.length)continue;
@@ -1105,9 +1202,9 @@ function openManage(p,opt={}){
         const status=st.mort?'Hipotecada':st.houses===5?'Hotel':st.houses?st.houses+(st.houses>1?' casas':' casa'):'Sin edificar';
         let bt='';
         if(sq.type==='street'&&full){
-          const be=buildErr(i),se=sellErr(i),hc=GROUPS[g].house;
+          const be=buildErr(i),se=sellErr(i),hc=houseCost(g,p.id);
           bt+=`<button class="btn sm grn" data-a="b" data-i="${i}" ${be?'disabled':''} title="${be}">${ic(st.houses===4?'hotel':'house')}+ ${fmt(hc)}</button>`;
-          bt+=`<button class="btn sm" data-a="s" data-i="${i}" ${se?'disabled':''} title="${se}">Vender ${st.houses===5?'hotel':'casa'} +${fmt(hc/2)}</button>`;
+          bt+=`<button class="btn sm" data-a="s" data-i="${i}" ${se?'disabled':''} title="${se}">Vender ${st.houses===5?'hotel':'casa'} +${fmt(GROUPS[g].house/2)}</button>`;
         }
         if(!st.mort){const me=mortErr(i);bt+=`<button class="btn sm" data-a="m" data-i="${i}" ${me?'disabled':''} title="${me}">Hipotecar +${fmt(sq.price/2)}</button>`}
         else bt+=`<button class="btn sm pri" data-a="u" data-i="${i}" ${p.money<unmortCost(i)?'disabled':''}>Levantar −${fmt(unmortCost(i))}</button>`;
@@ -1117,9 +1214,10 @@ function openManage(p,opt={}){
     m.body.innerHTML=h;
     m.body.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
       const i=+b.dataset.i,a=b.dataset.a;
-      if(a==='b'&&!buildErr(i)){build(i);Snd.build();log(`${nm(p)} construye ${G.props[i].houses===5?'un hotel':'una casa'} en ${pn(i)}`,'build')}
+      if(a==='r100'||a==='rall')impRepay(p,a==='rall'?1e9:100);
+      if(a==='b'&&!buildErr(i)){build(i);track('builds');Snd.build();log(`${nm(p)} construye ${G.props[i].houses===5?'un hotel':'una casa'} en ${pn(i)}`,'build')}
       if(a==='s'&&!sellErr(i)){sell(i);Snd.cash();log(`${nm(p)} vende un edificio de ${pn(i)}`,'good')}
-      if(a==='m'&&!mortErr(i)){mortgage(i);Snd.cash();log(`${nm(p)} hipoteca ${pn(i)}`,'good')}
+      if(a==='m'&&!mortErr(i)){mortgage(i);if(isImp())G.imp.mortUsed=true;Snd.cash();log(`${nm(p)} hipoteca ${pn(i)}`,'good')}
       if(a==='u'&&p.money>=unmortCost(i)){unmortgage(i);Snd.pay();log(`${nm(p)} levanta la hipoteca de ${pn(i)}`,'pay')}
       render();draw();
     });
@@ -1233,7 +1331,7 @@ function botBuild(p){
   while(guard++<80){
     const c=propsOf(p.id).filter(i=>BOARD[i].type==='street'&&!buildErr(i));if(!c.length)break;
     c.sort((x,y)=>G.props[x].houses-G.props[y].houses||GW[BOARD[y].group]-GW[BOARD[x].group]||BOARD[y].price-BOARD[x].price);
-    const i=c[0];if(p.money-GROUPS[BOARD[i].group].house<reserve)break;
+    const i=c[0];if(p.money-houseCost(BOARD[i].group,p.id)<reserve)break;
     build(i);where.add(GROUPS[BOARD[i].group].n);if(G.props[i].houses===5)hot++;else n++;
   }
   if(n||hot){log(`${nm(p)} construye ${n?n+(n>1?' casas':' casa'):''}${n&&hot?' y ':''}${hot?hot+(hot>1?' hoteles':' hotel'):''} en el grupo ${[...where].join(', ')}`,'build');Snd.build()}
@@ -1263,7 +1361,8 @@ function tradeDelta(t,pid){
 }
 function botAccepts(pid,t){
   const q=P(pid),pe=q.pers,pays=pid===t.a?t.aCash:t.bCash;if(pays>q.money)return false;
-  const{me,op}=tradeDelta(t,pid);return me>0&&me-pe.rival*Math.max(0,op)>=pe.margin;
+  let rv=pe.rival,mg=pe.margin;if(isImp()&&(t.a===0||t.b===0)){const n=skill('neg');rv*=1-.12*n;mg-=15*n}
+  const{me,op}=tradeDelta(t,pid);return me>0&&me-rv*Math.max(0,op)>=mg;
 }
 function botSelfOk(b,t){const{me,op}=tradeDelta(t,b.id);return me>0&&me-b.pers.rival*.6*Math.max(0,op)>=0}
 function humanLikely(t){const{me,op}=tradeDelta(t,t.b);return me>0&&me-.4*Math.max(0,op)>=0}
@@ -1351,8 +1450,9 @@ function humanRaise(p,amt,to,why){
       m.acts.innerHTML='';
       m.btn(ic('deed')+'Gestionar propiedades','',()=>openManage(p,{need:amt,onClose:draw}));
       m.btn(ic('swap')+'Negociar','',()=>openTrade(p,{onClose:draw}));
+      if(isImp()&&amt>p.money){const L=loanFor(p,amt-p.money);m.btn(ic('bank')+(L.ok?`Pedir préstamo de ${fmt(L.amt)}`:'Límite de préstamo alcanzado'),'',()=>{if(takeLoan(p,amt-p.money))draw()},!L.ok,L.ok?`Devolverás ${fmt(L.cost)}`:'')}
       m.btn('Declararme en bancarrota','red',async()=>{
-        const sure=await ask('¿Declararte en bancarrota?','<p class="lead">Quedarás fuera de la partida y tus bienes pasarán a tu acreedor.</p>',[{label:'Volver',v:false},{label:'Sí, me retiro',cls:'red',v:true}]);
+        const sure=await ask('¿Declararte en bancarrota?',isImp()?'<p class="lead">Perderás esta partida y una vida de la zona.</p>':'<p class="lead">Quedarás fuera de la partida y tus bienes pasarán a tu acreedor.</p>',[{label:'Volver',v:false},{label:'Sí, me retiro',cls:'red',v:true}]);
         if(sure){m.close();res(false)}
       });
       m.btn(`Pagar ${fmt(amt)}`,'pri',()=>{m.close();res(true)},p.money<amt);
@@ -1366,7 +1466,7 @@ async function pay(p,amt,to,why){
     const ok=p.bot?botRaise(p,amt):await humanRaise(p,amt,to,why);
     if(!ok||p.money<amt){await bankrupt(p,to);return false}
   }
-  addMoney(p,-amt);if(to)addMoney(to,amt);
+  addMoney(p,-amt);if(to){addMoney(to,amt);if(!to.bot)track('rentIn',amt)}
   Snd.pay();render();return true;
 }
 async function bankrupt(p,to){
@@ -1427,7 +1527,7 @@ async function auction(i){
     else{passed.add(q.id);if(ui)ui.q$('note').innerHTML=`${nm(q)} se retira`}
   }
   if(ui){ui.upd(null);ui.m.acts.innerHTML=`<span class="note">${leader?`<b>${esc(leader.name)}</b> gana la subasta por <b>${fmt(high)}</b>.`:'Nadie ha pujado. La propiedad sigue en el banco.'}</span>`;await wait(1700*Math.max(.6,CFG.speed));ui.m.close()}
-  if(leader){addMoney(leader,-high);G.props[i].owner=leader.id;log(`${nm(leader)} gana la subasta de ${pn(i)} por ${fmt(high)}`,'buy','gavel');Snd.buy();announceGroups(leader.id,[i])}
+  if(leader){addMoney(leader,-high);G.props[i].owner=leader.id;if(!leader.bot)track('buys');log(`${nm(leader)} gana la subasta de ${pn(i)} por ${fmt(high)}`,'buy','gavel');Snd.buy();announceGroups(leader.id,[i])}
   else log(`Nadie puja por ${pn(i)}. Sigue en el banco.`,'','gavel');
   render();
 }
@@ -1459,7 +1559,7 @@ async function stepBy(p,steps){
   const dir=Math.sign(steps),t=tokEls[p.id];
   for(let s=0;s<Math.abs(steps);s++){
     p.pos=(p.pos+dir+40)%40;
-    if(dir>0&&p.pos===0){addMoney(p,200);log(`${nm(p)} pasa por la SALIDA y cobra 200 €`,'good');Snd.cash();renderPlayers()}
+    if(dir>0&&p.pos===0){const sal=goSalary(p);addMoney(p,sal);log(`${nm(p)} pasa por la SALIDA y cobra ${fmt(sal)}`,'good');Snd.cash();afterGo(p,sal);renderPlayers()}
     placeTokens();
     if(t){t.classList.remove('hop');void t.offsetWidth;t.classList.add('hop')}
     camFollowPlayer(p,320);
@@ -1469,6 +1569,7 @@ async function stepBy(p,steps){
 }
 async function advanceTo(p,to){await stepBy(p,(to-p.pos+40)%40||40)}
 async function toJail(p){
+  if(isImp()&&p.boss&&G.imp.power.t==='jail'){log(`${nm(p)} se libra de la cárcel, como siempre`,'free','unlock');await sleep(700);return}
   p.pos=10;p.jail=true;p.jailTurns=0;placeTokens();flash(10);Snd.jail();vib([30,40,30]);
   camFollowPlayer(p,700);
   log(`${nm(p)} va a la cárcel`,'jail');render();await sleep(1200);
@@ -1486,14 +1587,14 @@ async function land(p,dice,mode){
     else{
       const ow=P(st.owner);let rent;
       if(sq.type==='util'&&mode==='util10'){const d=await rollDice(p);rent=10*d.total}else rent=rentOf(i,dice,mode);
-      if(await pay(p,rent,ow,'alquiler de '+sq.name))log(`${nm(p)} paga ${fmt(rent)} de alquiler a ${nm(ow)} por ${pn(i)}`,'bad');
+      if(await pay(p,rent,ow,'alquiler de '+sq.name)&&(ow.bot||trackStreet(i,rent)||true))log(`${nm(p)} paga ${fmt(rent)} de alquiler a ${nm(ow)} por ${pn(i)}`,'bad');
       await sleep(500);
     }
   }else switch(sq.type){
     case 'tax':if(await pay(p,sq.amount,null,sq.name))log(`${nm(p)} paga ${fmt(sq.amount)} de ${sq.name.toLowerCase()}`,'bad');await sleep(400);break;
     case 'chance':case 'chest':await drawCard(p,sq.type);break;
     case 'gotojail':await toJail(p);break;
-    case 'parking':log(`${nm(p)} descansa en el Parking gratuito`);break;
+    case 'parking':if(isImp()&&G.imp.ev&&G.imp.ev.id==='loteria'){addMoney(p,300);log(`${nm(p)} gana la lotería del parking: 300 €`,'good');Snd.cash()}else log(`${nm(p)} descansa en el Parking gratuito`);break;
     case 'jail':log(`${nm(p)} está de visita en la cárcel`);break;
   }
   render();
@@ -1504,6 +1605,7 @@ async function offerBuy(p,i){
   else buy=await humanBuy(p,i);
   if(buy&&p.money>=sq.price){
     addMoney(p,-sq.price);G.props[i].owner=p.id;
+    if(!p.bot)track('buys');
     log(`${nm(p)} compra ${pn(i)} por ${fmt(sq.price)}`,'buy');Snd.buy();render();announceGroups(p.id,[i]);await sleep(500);
   }else{log(`${nm(p)} no compra ${pn(i)}: va a subasta`,'','gavel');await sleep(400);await auction(i)}
 }
@@ -1533,7 +1635,7 @@ async function showCard(p,deck,card){
   m.close();
 }
 async function drawCard(p,deck){
-  const id=G.decks[deck].shift(),card=DECKS[deck][id];
+  const id=G.decks[deck].shift(),card=fixCard(DECKS[deck][id]);
   if(card.a.type!=='goojf')G.decks[deck].push(id);
   log(`${nm(p)} roba ${deck==='chance'?'Suerte':'Caja de Comunidad'}: «${card.t}»`,'','card');
   await showCard(p,deck,card);
@@ -1702,6 +1804,7 @@ function golpeEnd(){
   return null;
 }
 function showWinnerGolpe(w){
+  recordMatch('golpe',!w.bot);
   Snd.win();vib([40,60,40,60,80]);
   const list=active().slice().sort((a,b)=>netWorth(b)-netWorth(a));
   if(list[0]!==w){list.splice(list.indexOf(w),1);list.unshift(w)}
@@ -1710,6 +1813,413 @@ function showWinnerGolpe(w){
   const m=modal({title:isMe?'¡Golpe perfecto, has ganado!':`Gana ${esc(w.name)}`,html:`<p class="lead">${isMe?'Tú':esc(w.name)} ${how}. La partida ha durado ${G.round} rondas.</p><div class="fl" style="margin-top:16px">Clasificación por patrimonio</div><div class="rank">${rows}</div>`});
   m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-trophy"/></svg>`);
   m.btn('Nueva partida','pri',()=>{m.close();goStart()});
+}
+
+/* =================== Imperio: zonas =================== */
+const STREET_IDX=['brown','lightblue','pink','orange','red','yellow','green','darkblue'].flatMap(g=>GROUPS[g].idx);
+const RAIL_IDX=[5,15,25,35];
+const DEFAULT_NAMES=BOARD.map(s=>({name:s.name,label:s.label}));
+const ZONES=[
+  {id:'ciutatvella',name:'Ciutat Vella',city:'Barcelona',
+   streets:["Carrer de l'Hospital","Riera Baixa","Carrer de Sant Pau","Rambla del Raval","Carrer de Joaquín Costa","Carrer dels Escudellers","Plaça Reial","Carrer d'Avinyó","Carrer de la Princesa","Passeig del Born","Carrer de Montcada","Carrer de Ferran","Plaça de Sant Jaume","Carrer del Bisbe","Via Laietana","Portal de l'Àngel","Plaça de Catalunya","Moll de la Fusta","Port Vell","Passeig de Joan de Borbó","Passeig de Colom","La Rambla"],
+   rails:['Estació de França','Drassanes','Liceu','Jaume I'],
+   boss:{name:'El Marquès del Born',power:{t:'rent',v:.15},d:'Cobra un 15 % más de alquiler en todas sus propiedades.'},star:{t:'nomort',d:'Gana sin hipotecar ninguna propiedad'}},
+  {id:'eixample',name:"L'Eixample",city:'Barcelona',
+   streets:['Carrer de Calàbria','Carrer de Viladomat','Carrer de Girona','Carrer de Bailèn','Carrer del Bruc',"Carrer d'Urgell",'Carrer de Muntaner',"Carrer d'Aribau",'Carrer de València',"Carrer d'Aragó",'Carrer de Mallorca','Carrer de Provença','Carrer de Balmes','Rambla de Catalunya','Consell de Cent','Passeig de Sant Joan','Gran Via','Carrer de Rosselló','Carrer de Còrsega','Avinguda de Roma','Avinguda Diagonal','Passeig de Gràcia'],
+   rails:['Estació de Sants','Provença','Universitat','Sagrada Família'],
+   boss:{name:"La Duquesa de l'Eixample",power:{t:'build',v:.3},d:'Sus casas y hoteles le cuestan un 30 % menos.'},star:{t:'hotels2',d:'Gana con al menos 2 hoteles construidos'}},
+  {id:'gracia',name:'Gràcia',city:'Barcelona',
+   streets:['Carrer de Mozart','Carrer del Planeta','Carrer de Verdi','Carrer de Torrijos','Carrer de la Perla','Plaça del Sol','Plaça de la Virreina','Plaça de la Vila','Carrer de Bonavista','Carrer de Ros de Olano','Carrer de Goya','Carrer de Llibertat','Carrer de Sant Domènec','Travessera de Gràcia','Carrer Gran de Gràcia','Carrer d\'Astúries','Carrer de Francisco Giner','Carrer de Larrard','Carrer de Lesseps','Park Güell','Plaça de Lesseps','Avinguda de Vallcarca'],
+   rails:['Fontana','Diagonal','Joanic','Lesseps'],
+   boss:{name:'Mestre Gràcia',power:{t:'go',v:100},d:'Cobra 100 € más cada vez que pasa por la SALIDA.'},star:{t:'noloan',d:'Gana sin pedir ningún préstamo'}},
+  {id:'madrid',name:'Madrid',city:'España',
+   streets:['Plaza de Lavapiés','Calle de Embajadores','Calle de Toledo','Calle de la Cava Baja','Glorieta de Bilbao','Calle de Fuencarral','Calle de Hortaleza','Plaza de Chueca','Calle de Atocha','Calle Mayor','Calle del Arenal','Puerta del Sol','Plaza Mayor','Calle de Alcalá','Calle de Velázquez','Calle de Goya','Calle de Serrano','Paseo de Recoletos','Calle de Ortega y Gasset','Plaza de Colón','Paseo del Prado','Paseo de la Castellana'],
+   rails:['Atocha','Chamartín','Príncipe Pío','Nuevos Ministerios'],
+   boss:{name:'El Conde de Salamanca',power:{t:'cash',v:800},d:'Empieza la partida con 800 € más.'},star:{t:'rails4',d:'Ten las 4 estaciones a la vez'}},
+  {id:'valencia',name:'València',city:'España',
+   streets:['Carrer de Sueca','Carrer de Russafa','Carrer de Cuba','Carrer de Puerto Rico','Carrer del Literat Azorín','Carrer de Quart','Carrer de Cavallers','Plaça de la Mare de Déu','Plaça de la Reina','Carrer de Sant Vicent','Plaça de l\'Ajuntament','Avinguda del Port','Passeig de Neptú','Platja de la Malva-rosa','Carrer de Colón','Carrer de Jorge Juan','Gran Via del Marquès del Túria','Avinguda de França','Ciutat de les Arts','Passeig de l\'Albereda','Carrer de la Pau','Plaça del Patriarca'],
+   rails:['Estació del Nord','Joaquín Sorolla','Xàtiva','Colón'],
+   boss:{name:'La Fallera Major',power:{t:'props',v:3},d:'Empieza la partida con 3 calles en su poder.'},star:{t:'groups3',d:'Gana con 3 grupos de color completos'}},
+  {id:'sevilla',name:'Sevilla',city:'España',
+   streets:['Calle Pureza','Calle Betis','Calle Feria','Alameda de Hércules','Calle Amor de Dios','Calle Sierpes','Calle Tetuán','Plaza Nueva','Calle Mateos Gago','Barrio de Santa Cruz','Puerta de Jerez','Calle San Fernando','Plaza del Triunfo','Avenida de la Constitución','Parque de María Luisa','Avenida de la Palmera','Plaza de España','Paseo de Colón','Calle Asunción','Calle República Argentina','Torre del Oro','Plaza del Altozano'],
+   rails:['Santa Justa','Plaza de Armas','San Bernardo','Prado de San Sebastián'],
+   boss:{name:'El Torero de Triana',power:{t:'jail',v:1},d:'Nunca va a la cárcel: siempre se libra.'},star:{t:'rich',v:6000,d:'Gana con más de 6.000 € de patrimonio'}},
+  {id:'paris',name:'París',city:'Francia',
+   streets:['Rue Oberkampf','Rue de Belleville','Rue Mouffetard','Rue des Martyrs','Canal Saint-Martin','Rue Lepic','Place du Tertre','Montmartre','Le Marais','Rue de Rivoli','Boulevard Saint-Germain','Place des Vosges','Île Saint-Louis',"Quai d'Orsay",'Place Vendôme','Avenue Montaigne','Rue Saint-Honoré','Trocadéro','Champ de Mars','Île de la Cité','Tour Eiffel','Champs-Élysées'],
+   rails:['Gare du Nord','Gare de Lyon',"Gare de l'Est",'Gare Montparnasse'],
+   boss:{name:'Madame Rivoli',power:{t:'rent',v:.2},d:'Cobra un 20 % más de alquiler en todas sus propiedades.'},star:{t:'nomort',d:'Gana sin hipotecar ninguna propiedad'}},
+  {id:'londres',name:'Londres',city:'Reino Unido',
+   streets:['Brick Lane','Camden Lock','Portobello Road','Notting Hill Gate','Shoreditch','Covent Garden','Soho','Chinatown','Baker Street','Abbey Road',"King's Road",'Southbank','Borough Market','Tower Bridge','Hyde Park Corner','Kensington','Chelsea','Canary Wharf','Greenwich','Hampstead','Belgravia','Buckingham Gate'],
+   rails:['Paddington','Victoria','Waterloo','St Pancras'],
+   boss:{name:'Lord Kensington',power:{t:'build',v:.35},d:'Sus casas y hoteles le cuestan un 35 % menos.'},star:{t:'hotels2',d:'Gana con al menos 2 hoteles construidos'}},
+  {id:'nuevayork',name:'Nueva York',city:'Estados Unidos',
+   streets:['Bowery','Delancey Street','Bleecker Street','Christopher Street','Greenwich Village','SoHo','Tribeca','Chinatown','DUMBO','Williamsburg','Brooklyn Heights','Wall Street','Broadway','Times Square','Madison Avenue','Lexington Avenue','Park Avenue','Upper East Side','Columbus Circle','Central Park West','Hudson Yards','Fifth Avenue'],
+   rails:['Grand Central','Penn Station','Fulton Center','Union Square'],
+   boss:{name:'La Magnate de Manhattan',power:{t:'cash',v:1300},d:'Empieza la partida con 1.300 € más.'},star:{t:'rich',v:9000,d:'Gana con más de 9.000 € de patrimonio'}},
+  {id:'tokio',name:'Tokio',city:'Japón',
+   streets:['Kōenji','Shimokitazawa','Asakusa','Ueno','Yanaka','Harajuku','Takeshita-dōri','Omotesandō','Shibuya','Ebisu','Daikanyama','Shinjuku','Kabukichō','Ikebukuro','Akihabara','Nihonbashi','Marunouchi','Roppongi','Azabu','Odaiba','Chiyoda','Ginza'],
+   rails:['Estación de Tokio','Shinagawa','Ueno','Shinjuku'],
+   boss:{name:'El Shōgun de Ginza',power:{t:'props',v:4},d:'Empieza la partida con 4 calles en su poder.'},star:{t:'groups3',d:'Gana con 3 grupos de color completos'}},
+];
+function applyZone(z){
+  BOARD.forEach((s,i)=>{s.name=DEFAULT_NAMES[i].name;s.label=DEFAULT_NAMES[i].label});
+  if(!z)return;
+  STREET_IDX.forEach((i,k)=>{BOARD[i].name=z.streets[k];BOARD[i].label=z.streets[k]});
+  RAIL_IDX.forEach((i,k)=>{BOARD[i].name=z.rails[k];BOARD[i].label=z.rails[k]});
+}
+function fixCard(card){
+  const a=card.a;if(a.type!=='move'||!a.to)return card;
+  return{...card,t:card.t.replace(DEFAULT_NAMES[a.to].name,BOARD[a.to].name)};
+}
+
+/* =================== Imperio: perfil y progreso =================== */
+const PROF_KEY='magnate-imperio-v1';
+function defProfile(){return{v:1,name:'',token:'hat',level:1,xp:0,points:0,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
+  daily:{last:'',streak:0,max:0},stats:{played:0,wins:0,modes:{clasico:{p:0,w:0},golpe:{p:0,w:0},imperio:{p:0,w:0}},rentIn:0,bestNW:0,bosses:0,streets:{}},look:{theme:'noche',dice:'clasico'}}}
+function loadProf(){
+  try{const s=JSON.parse(localStorage.getItem(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
+  return defProfile();
+}
+let PROF=loadProf();
+const saveProf=()=>{try{localStorage.setItem(PROF_KEY,JSON.stringify(PROF))}catch(e){}};
+const isImp=()=>!!(G&&G.mode==='imperio'&&G.imp);
+const xpNeed=l=>150+l*100;
+const skill=k=>PROF.skills[k]||0;
+const hasBiz=id=>!!PROF.biz[id];
+const zoneOf=zi=>ZONES[zi%ZONES.length];
+const tierOf=zi=>Math.floor(zi/ZONES.length);
+const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const tierName=t=>t?`Temporada élite ${ROMAN[t]||t}`:'Primera temporada';
+function zoneState(zi){return PROF.zones[zi]||(PROF.zones[zi]={stars:[false,false,false],lives:3,wins:0,tries:0})}
+const SKILLS={
+  con:{n:'Constructor',i:'build',d:t=>`Tus casas y hoteles cuestan un ${t*10} % menos.`},
+  neg:{n:'Negociador',i:'swap',d:t=>`Los rivales aceptan tratos un ${t*12} % peores para ellos.`},
+  inv:{n:'Inversor',i:'cash',d:t=>`Cobras ${t*25} € más al pasar por la SALIDA.`},
+};
+const BIZ=[
+  {id:'kiosko',n:'Quiosco de prensa',c:400,inc:15,d:'+15 € al empezar cada uno de tus turnos.'},
+  {id:'bar',n:'Bar de tapas',c:900,inc:30,d:'+30 € al empezar cada uno de tus turnos.'},
+  {id:'agencia',n:'Agencia inmobiliaria',c:1500,d:'Tus casas y hoteles cuestan un 10 % menos.'},
+  {id:'bufete',n:'Bufete de abogados',c:1800,d:'Los préstamos del banco solo cobran un 5 % de interés.'},
+  {id:'hotelplaya',n:'Hotel en la playa',c:2600,inc:60,d:'+60 € al empezar cada uno de tus turnos.'},
+  {id:'naviera',n:'Naviera',c:4000,d:'Empiezas cada partida con 300 € más.'},
+  {id:'banco',n:'Banco privado',c:6000,inc:100,d:'+100 € por turno y un límite de préstamo un 50 % mayor.'},
+];
+const EVENTS=[
+  {id:'crisis',n:'Crisis económica',d:()=>'Todos los alquileres bajan un 25 %.'},
+  {id:'boom',n:'Boom inmobiliario',d:()=>'Las casas y los hoteles cuestan la mitad.'},
+  {id:'fiestas',n:'Fiestas del barrio',d:g=>`El grupo ${GROUPS[g].n} cobra el doble de alquiler.`},
+  {id:'turismo',n:'Temporada turística',d:()=>'Las estaciones cobran el doble de alquiler.'},
+  {id:'huelga',n:'Huelga de transporte',d:()=>'Las estaciones no cobran alquiler.'},
+  {id:'loteria',n:'Lotería en el parking',d:()=>'Caer en el Parking gratuito da 300 €.'},
+  {id:'paga',n:'Paga extra',d:()=>'Pasar por la SALIDA da 100 € más.'},
+];
+const ACH=[
+  {id:'primera',n:'Primer imperio',d:'Gana tu primera zona en Imperio.',ok:()=>PROF.stats.bosses>=1},
+  {id:'jefes3',n:'Cazajefes',d:'Derrota a 3 jefes de zona.',ok:()=>PROF.stats.bosses>=3},
+  {id:'hotel',n:'Primer hotel',d:'Construye un hotel.',ok:()=>G&&propsOf(0).some(i=>G.props[i].houses===5)},
+  {id:'azul',n:'Lo más caro',d:'Completa el grupo azul.',ok:()=>G&&ownsAll(0,'darkblue')},
+  {id:'estaciones',n:'Jefe de estación',d:'Ten las 4 estaciones a la vez.',ok:()=>G&&ownsAll(0,'rail')},
+  {id:'millonario',n:'Millonario',d:'Llega a 10.000 € de patrimonio en una partida.',ok:()=>G&&netWorth(G.players[0])>=10000},
+  {id:'sinprestamos',n:'Sin deudas',d:'Gana una zona sin pedir préstamos.',ok:()=>false},
+  {id:'tres',n:'Perfección',d:'Consigue las 3 estrellas en una zona.',ok:()=>Object.values(PROF.zones).some(z=>z.stars.every(Boolean))},
+  {id:'album',n:'Coleccionista',d:'Completa el álbum de una zona.',ok:()=>Object.values(PROF.album).some(a=>a.length>=28)},
+  {id:'racha7',n:'Constancia',d:'Entra 7 días seguidos.',ok:()=>PROF.daily.max>=7},
+  {id:'golpista',n:'Golpista',d:'Gana una partida de El Golpe.',ok:()=>PROF.stats.modes.golpe.w>=1},
+  {id:'clasico',n:'Magnate clásico',d:'Gana una partida del modo clásico.',ok:()=>PROF.stats.modes.clasico.w>=1},
+  {id:'elite',n:'Élite',d:'Llega a la temporada élite.',ok:()=>PROF.progress>=ZONES.length},
+  {id:'negocios',n:'Empresario',d:'Ten 3 negocios.',ok:()=>Object.keys(PROF.biz).length>=3},
+  {id:'nivel10',n:'Veterano',d:'Llega al nivel 10.',ok:()=>PROF.level>=10},
+];
+const LOOKS={
+  theme:[{id:'noche',n:'Noche',lv:1},{id:'atardecer',n:'Atardecer',lv:2},{id:'bosque',n:'Bosque',lv:5},{id:'mar',n:'Mar',lv:8}],
+  dice:[{id:'clasico',n:'Clásicos',lv:1},{id:'rojo',n:'Casino',lv:4},{id:'oro',n:'Oro',ach:'tres'},{id:'negro',n:'Medianoche',ach:'golpista'}],
+};
+const lookOk=o=>o.ach?!!PROF.ach[o.ach]:PROF.level>=(o.lv||1);
+const lookReq=o=>o.ach?`Logro «${ACH.find(a=>a.id===o.ach).n}»`:`Nivel ${o.lv}`;
+function applyLook(){document.documentElement.dataset.theme=PROF.look.theme;document.documentElement.dataset.dice=PROF.look.dice}
+const tokOk=t=>!t.lv||PROF.level>=t.lv;
+
+/* --- reglas modificadas --- */
+function houseCost(g,pid){
+  let c=GROUPS[g].house;
+  if(isImp()){
+    if(G.imp.ev&&G.imp.ev.id==='boom')c*=.5;
+    const p=P(pid);
+    if(p.boss&&G.imp.power.t==='build')c*=1-G.imp.power.v;
+    if(!p.bot){c*=1-.1*skill('con');if(hasBiz('agencia'))c*=.9}
+  }
+  return Math.max(5,Math.round(c/5)*5);
+}
+function impRent(i,r){
+  if(!r)return r;const sq=BOARD[i],st=G.props[i],ev=G.imp.ev;
+  if(ev){if(ev.id==='crisis')r*=.75;if(ev.id==='fiestas'&&sq.group===ev.g)r*=2;if(ev.id==='turismo'&&sq.type==='rail')r*=2;if(ev.id==='huelga'&&sq.type==='rail')r=0}
+  if(st.owner!=null&&P(st.owner).boss&&G.imp.power.t==='rent')r*=1+G.imp.power.v;
+  return Math.round(r);
+}
+function goSalary(p){
+  let s=200;
+  if(isImp()){
+    if(!p.bot)s+=25*skill('inv');
+    if(p.boss&&G.imp.power.t==='go')s+=G.imp.power.v;
+    if(G.imp.ev&&G.imp.ev.id==='paga')s+=100;
+  }
+  return s;
+}
+function afterGo(p,sal){
+  if(!isImp()||p.bot||!G.imp.debt)return;
+  const r=Math.min(G.imp.debt,Math.floor(sal/2),p.money);
+  if(r>0){addMoney(p,-r);G.imp.debt-=r;log(`Devuelves ${fmt(r)} del préstamo. Te quedan ${fmt(G.imp.debt)} de deuda`,'pay','bank')}
+}
+const debtLimit=()=>Math.round((3000+300*(G.imp.zi%ZONES.length)+500*G.imp.tier)*(hasBiz('banco')?1.5:1));
+function loanFor(p,need){
+  const amt=Math.ceil(need/50)*50,cost=Math.round(amt*(1+(hasBiz('bufete')?.05:.1)));
+  return{amt,cost,ok:G.imp.debt+cost<=debtLimit()};
+}
+function takeLoan(p,need){
+  const L=loanFor(p,need);if(!L.ok)return false;
+  addMoney(p,L.amt);G.imp.debt+=L.cost;G.imp.loanUsed=true;
+  log(`${nm(p)} pide un préstamo de ${fmt(L.amt)} al banco. Deuda total: ${fmt(G.imp.debt)}`,'pay','bank');Snd.cash();render();return true;
+}
+function impRepay(p,max){const r=Math.min(G.imp.debt,max,p.money);if(r<=0)return;addMoney(p,-r);G.imp.debt-=r;log(`${nm(p)} devuelve ${fmt(r)} del préstamo`,'pay','bank');Snd.pay()}
+function impManageHTML(p){
+  if(!G.imp.debt)return '';
+  return `<div class="mrow"><div class="nm2">Préstamo del banco<small>Deuda pendiente: ${fmt(G.imp.debt)} · límite ${fmt(debtLimit())}. Al pasar por la SALIDA devuelves la mitad de lo que cobras.</small></div><div class="bt"><button class="btn sm" data-a="r100" data-i="0" ${p.money<1?'disabled':''}>Devolver 100 €</button><button class="btn sm pri" data-a="rall" data-i="0" ${p.money<1?'disabled':''}>Devolver todo</button></div></div>`;
+}
+function impPills(p){
+  if(!isImp())return '';let s='';
+  if(p.boss)s+=`<span class="pill boss"><svg class="ic"><use href="#t-crown"/></svg>Jefe</span>`;
+  if(!p.bot&&G.imp.debt)s+=`<span class="pill debt">${ic('bank')}Deuda ${fmt(G.imp.debt)}</span>`;
+  return s;
+}
+function track(k,v=1){if(G){G.track=G.track||{rentIn:0,buys:0,builds:0,streets:{}};G.track[k]=(G.track[k]||0)+v}}
+function trackStreet(i,v){if(G){track('rentIn',0);const n=BOARD[i].name;G.track.streets[n]=(G.track.streets[n]||0)+v}}
+function checkAch(silent){
+  const got=[];
+  for(const a of ACH){if(PROF.ach[a.id])continue;let ok=false;try{ok=a.ok()}catch(e){}if(ok){PROF.ach[a.id]=Date.now();PROF.capital+=100;got.push(a);if(!silent&&G)toast(`Logro desbloqueado: <b>${a.n}</b> · +100 € de capital`,'big','medal')}}
+  if(got.length)saveProf();return got;
+}
+let impTick=0;
+function impRender(){
+  if(!G||!G.players)return;
+  const key=G.mode==='imperio'&&G.imp?G.imp.zid:'clasico';
+  const al=PROF.album[key]||(PROF.album[key]=[]);let ch=false;
+  for(const i of propsOf(0))if(!al.includes(i)){al.push(i);ch=true}
+  if(ch)saveProf();
+  if(++impTick%3===0)checkAch(false);
+  const chip=$('#evChip');
+  if(isImp()&&G.imp.ev){chip.hidden=false;const e=EVENTS.find(x=>x.id===G.imp.ev.id);chip.innerHTML=`${ic('flag')}<span><b>${e.n}</b><span>${e.d(G.imp.ev.g)}</span></span>`;chip.onclick=()=>ask(e.n,`<p class="lead">${e.d(G.imp.ev.g)}</p><p class="note" style="margin-top:10px">Los eventos de temporada duran 6 rondas. Después llega otro.</p>`,[{label:'Entendido',cls:'pri',v:1}])}else chip.hidden=true;
+}
+async function impTurnStart(p){
+  if(!isImp())return;
+  if(G.round>=G.imp.nextEv&&G.imp.evRound!==G.round){
+    G.imp.evRound=G.round;G.imp.nextEv=G.round+6;
+    const e=EVENTS[rnd(EVENTS.length)],g=['brown','lightblue','pink','orange','red','yellow','green','darkblue'][rnd(8)];
+    G.imp.ev={id:e.id,g};log(`Evento de temporada: <b>${e.n}</b>. ${e.d(g)}`,'big','flag');render();await sleep(900);
+  }
+  if(!p.bot){
+    const inc=BIZ.filter(b=>hasBiz(b.id)&&b.inc).reduce((s,b)=>s+b.inc,0);
+    if(inc){addMoney(p,inc);log(`Tus negocios te dan ${fmt(inc)}`,'good','briefcase');Snd.cash();render()}
+  }
+}
+function recordMatch(mode,win){
+  if(!G||G.recorded)return;G.recorded=true;
+  const st=PROF.stats,t=G.track||{rentIn:0,streets:{}};
+  st.played++;if(win)st.wins++;st.modes[mode].p++;if(win)st.modes[mode].w++;
+  st.rentIn+=t.rentIn||0;st.bestNW=Math.max(st.bestNW,netWorth(G.players[0]));
+  for(const n in t.streets||{})st.streets[n]=(st.streets[n]||0)+t.streets[n];
+  if(mode!=='imperio')addXP(win?(mode==='golpe'?100:150):(mode==='golpe'?30:40));
+  checkAch(true);saveProf();
+}
+function addXP(n){
+  PROF.xp+=n;let ups=0;
+  while(PROF.xp>=xpNeed(PROF.level)){PROF.xp-=xpNeed(PROF.level);PROF.level++;PROF.points++;ups++}
+  saveProf();return ups;
+}
+
+/* --- partida de Imperio --- */
+function newImperioGame(zi){
+  const z=zoneOf(zi),tier=tierOf(zi),lv=zi%ZONES.length;
+  applyZone(z);
+  const g=newGame(PROF.name||'Tú',PROF.token||'hat','imperio');
+  g.imp={zi,zid:z.id,tier,power:z.boss.power,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0};
+  g.track={rentIn:0,buys:0,builds:0,streets:{}};
+  const boss=g.players[1];boss.name=z.boss.name;boss.boss=true;boss.pers=makePers(['agresivo','constructor','equilibrado'][lv%3]);
+  g.players.forEach(p=>{
+    if(p.bot)p.money=1500+150*lv+300*tier+(p.boss?400:0);
+    else p.money=1500+Math.min(800,Math.round(PROF.capital*.05/10)*10)+(hasBiz('naviera')?300:0);
+  });
+  if(z.boss.power.t==='cash')boss.money+=z.boss.power.v;
+  if(z.boss.power.t==='props'){
+    let n=0;for(const i of shuffle(STREET_IDX.slice())){if(n>=z.boss.power.v)break;const gi=GROUPS[BOARD[i].group].idx;if(gi.filter(j=>g.props[j].owner===1).length>=gi.length-1)continue;g.props[i].owner=1;n++}
+  }
+  return g;
+}
+function starResults(win){
+  const z=zoneOf(G.imp.zi),h=G.players[0],s=z.star;
+  let third=false;
+  if(win){
+    if(s.t==='nomort')third=!G.imp.mortUsed;
+    if(s.t==='noloan')third=!G.imp.loanUsed;
+    if(s.t==='hotels2')third=propsOf(0).filter(i=>G.props[i].houses===5).length>=2;
+    if(s.t==='rails4')third=G.imp.maxRails>=4||ownsAll(0,'rail');
+    if(s.t==='groups3')third=GORDER.filter(g=>GW[g]&&ownsAll(0,g)).length>=3;
+    if(s.t==='rich')third=netWorth(h)>=s.v;
+  }
+  return[win,win&&G.round<=30,third];
+}
+function impFinish(win){
+  const zi=G.imp.zi,z=zoneOf(zi),zs=zoneState(zi),h=G.players[0];
+  zs.tries++;
+  const got=starResults(win),newStars=got.filter((v,k)=>v&&!zs.stars[k]).length;
+  zs.stars=zs.stars.map((v,k)=>v||got[k]);
+  const t=G.track||{};
+  const xp=(win?250:70)+80*newStars+6*(t.buys||0)+10*(t.builds||0)+Math.floor((t.rentIn||0)/25);
+  const nw=Math.max(netWorth(h),(G.track&&G.track.maxNW)||0),cap=Math.max(win?100:50,Math.round((win?nw*.25:nw*.08)/10)*10);
+  let lifeMsg='',lostCap=0;
+  if(win){zs.wins++;PROF.stats.bosses++;if(zi===PROF.progress)PROF.progress++;if(!G.imp.loanUsed)PROF.ach.sinprestamos=PROF.ach.sinprestamos||Date.now()}
+  else{zs.lives--;if(zs.lives<=0){zs.lives=3;lostCap=Math.round(PROF.capital*.25/10)*10;PROF.capital-=lostCap;lifeMsg=`Has perdido las 3 vidas de la zona: el banco se queda con ${fmt(lostCap)} de tu capital y las vidas se recargan.`}else lifeMsg=`Pierdes una vida. Te quedan ${zs.lives} en esta zona.`}
+  PROF.capital+=cap;
+  recordMatch('imperio',win);
+  const ups=addXP(xp);
+  const achs=checkAch(true);
+  saveProf();
+  Snd[win?'win':'bust']();
+  const starRow=['Gana la zona','Gana en 30 rondas o menos',z.star.d].map((d,k)=>`<div class="kv"><span>${ic(got[k]?'starF':'star','st'+(got[k]?' on':''))} ${d}</span><b>${got[k]?'Conseguida':zs.stars[k]?'Ya la tenías':'—'}</b></div>`).join('');
+  const m=modal({title:win?`¡${esc(z.name)} es tuya!`:`${esc(z.boss.name)} te ha ganado`,cls:'wide',html:`
+    <p class="lead">${win?`Has derrotado a <b>${esc(z.boss.name)}</b> en ${G.round} rondas.${zi+1>=PROF.progress?' Se desbloquea la siguiente zona.':''}`:`Esta vez no ha podido ser. ${lifeMsg}`}</p>
+    <div class="fl" style="margin-top:16px">Estrellas</div>${starRow}
+    <div class="fl" style="margin-top:16px">Recompensas</div>
+    <div class="kv"><span>Experiencia</span><b>+${xp} XP${ups?` · ¡Subes al nivel ${PROF.level}!`:''}</b></div>
+    <div class="kv"><span>Capital</span><b>+${fmt(cap)}${lostCap?` · −${fmt(lostCap)}`:''}</b></div>
+    ${achs.length?`<div class="kv"><span>Logros nuevos</span><b>${achs.map(a=>a.n).join(', ')}</b></div>`:''}
+    ${ups?`<p class="note" style="margin-top:12px">Tienes <b>${PROF.points}</b> ${PROF.points===1?'punto':'puntos'} para gastar en el árbol de mejoras.</p>`:''}`});
+  m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-${win?'trophy':'down'}"/></svg>`);
+  m.btn('Volver al mapa','pri',()=>{m.close();RUN++;G=null;openHub()});
+}
+
+/* =================== Imperio: pantallas =================== */
+const today=()=>{const d=new Date();return`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`};
+const yesterday=()=>{const d=new Date(Date.now()-864e5);return`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`};
+const dailyReady=()=>PROF.daily.last!==today();
+function claimDaily(){
+  if(!dailyReady())return;
+  PROF.daily.streak=PROF.daily.last===yesterday()?PROF.daily.streak+1:1;
+  PROF.daily.max=Math.max(PROF.daily.max,PROF.daily.streak);PROF.daily.last=today();
+  const cap=100+50*Math.min(PROF.daily.streak-1,6);PROF.capital+=cap;
+  const ups=addXP(30);checkAch(true);saveProf();Snd.win();
+  ask('Recompensa diaria',`<p class="lead">Día <b>${PROF.daily.streak}</b> seguido. Recibes <b class="gold">${fmt(cap)}</b> de capital y 30 XP${ups?` y subes al nivel ${PROF.level}`:''}.</p><p class="note" style="margin-top:10px">Vuelve mañana: cuantos más días seguidos, mayor es el premio (hasta 400 € al día).</p>`,[{label:'Genial',cls:'pri',v:1}]).then(openHub);
+}
+function openHub(){
+  closeAll();$('#start').hidden=true;applyZone(null);
+  const hub=$('#hub');hub.hidden=false;
+  const tier=tierOf(PROF.progress),start=tier*ZONES.length;
+  const zones=ZONES.map((z,k)=>{
+    const zi=start+k,zs=zoneState(zi),locked=zi>PROF.progress,cur=zi===PROF.progress,done=zs.wins>0;
+    return `<button type="button" class="zcard${locked?' locked':''}${cur?' cur':''}${done?' done':''}" data-zi="${zi}" ${locked?'disabled':''}>
+      <span class="znum">${locked?ic('lock'):k+1}</span>
+      <span class="zinfo"><b>${esc(z.name)}</b><small>${esc(z.city)} · Jefe: ${esc(z.boss.name)}</small></span>
+      <span class="zside"><span class="stars">${zs.stars.map(s=>ic(s?'starF':'star','st'+(s?' on':''))).join('')}</span>${locked?'':`<span class="lives">${[0,1,2].map(k=>ic(k<zs.lives?'heartF':'heart','lv'+(k<zs.lives?' on':''))).join('')}</span>`}</span>
+    </button>`}).join('');
+  const nextXP=xpNeed(PROF.level);
+  $('#hubBody').innerHTML=`
+    <div class="hub-top">
+      <button class="ib" type="button" id="hubBack" aria-label="Volver">${ic('back')}</button>
+      <div class="hub-title"><small>Modo campaña</small><b>Imperio</b></div>
+      <div class="hub-stats">
+        <div class="hstat"><small>Nivel ${PROF.level}</small><b>${PROF.xp}<span class="note"> / ${nextXP} XP</span></b><div class="xpbar"><i style="width:${PROF.xp/nextXP*100}%"></i></div></div>
+        <div class="hstat"><small>Capital</small><b class="gold">${fmt(PROF.capital)}</b></div>
+      </div>
+    </div>
+    ${dailyReady()?`<button type="button" class="daily" id="hubDaily">${ic('gift')}<span><b>Recompensa diaria disponible</b><small>Racha actual: ${PROF.daily.last===yesterday()?PROF.daily.streak:0} días. Tócala para reclamarla.</small></span></button>`:''}
+    <div class="hgrid">
+      <button type="button" class="hbtn" data-h="skills">${ic('star')}Mejoras${PROF.points?`<span class="badge">${PROF.points}</span>`:''}</button>
+      <button type="button" class="hbtn" data-h="biz">${ic('briefcase')}Negocios</button>
+      <button type="button" class="hbtn" data-h="album">${ic('deed')}Álbum</button>
+      <button type="button" class="hbtn" data-h="ach">${ic('medal')}Logros<span class="note">${Object.keys(PROF.ach).length}/${ACH.length}</span></button>
+      <button type="button" class="hbtn" data-h="stats">${ic('chart')}Estadísticas</button>
+      <button type="button" class="hbtn" data-h="look">${ic('palette')}Personalizar</button>
+    </div>
+    <div class="season"><b>${tierName(tier)}</b><span>${ZONES.filter((z,k)=>zoneState(start+k).wins>0).length} de ${ZONES.length} zonas conquistadas</span><button class="hq" type="button" data-help="imperio" aria-label="Cómo funciona Imperio" style="margin-left:auto">${ic('help')}</button></div>
+    <div class="zpath">${zones}</div>
+    ${tier>0?`<p class="note">Temporadas anteriores: las zonas ya conquistadas se pueden volver a jugar desde aquí cuando llegues a cada una.</p>`:''}`;
+  $('#hubBack').onclick=()=>{hub.hidden=true;goStart()};
+  const d=$('#hubDaily');if(d)d.onclick=claimDaily;
+  $('#hubBody').querySelectorAll('[data-zi]').forEach(b=>b.onclick=()=>zoneIntro(+b.dataset.zi));
+  $('#hubBody').querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>({skills:openSkills,biz:openBiz,album:openAlbum,ach:openAch,stats:openStats,look:openLook})[b.dataset.h]());
+}
+function zoneIntro(zi){
+  const z=zoneOf(zi),tier=tierOf(zi),zs=zoneState(zi),lv=zi%ZONES.length;
+  const startMoney=1500+Math.min(800,Math.round(PROF.capital*.05/10)*10)+(hasBiz('naviera')?300:0);
+  const bossC=SEAT_COLORS[1];
+  const m=modal({title:`${esc(z.name)}${tier?` · ${tierName(tier)}`:''}`,cls:'wide',closable:true,help:'imperio',html:`
+    <div class="bosscard">${disc({color:bossC,token:'crown'},'xl')}<div><small>Jefe de zona</small><b>${esc(z.boss.name)}</b><p class="note">${z.boss.d}</p></div></div>
+    <div class="fl" style="margin-top:16px">Objetivos</div>
+    ${['Derrota al jefe (que quiebre)','Hazlo en 30 rondas o menos',z.star.d].map((d,k)=>`<div class="kv"><span>${ic(zs.stars[k]?'starF':'star','st'+(zs.stars[k]?' on':''))} ${d}</span><b>${zs.stars[k]?'Conseguida':''}</b></div>`).join('')}
+    <div class="fl" style="margin-top:16px">Tu partida</div>
+    <div class="kv"><span>Dinero inicial</span><b>${fmt(startMoney)}</b></div>
+    <div class="kv"><span>Rivales</span><b>${fmt(1500+150*lv+300*tier)} cada uno · el jefe, más</b></div>
+    <div class="kv"><span>Vidas en esta zona</span><b><span class="lives">${[0,1,2].map(k=>ic(k<zs.lives?'heartF':'heart','lv'+(k<zs.lives?' on':''))).join('')}</span></b></div>
+    <p class="note" style="margin-top:12px">Si te quedas sin dinero, el banco te presta hasta ${fmt(Math.round((3000+300*lv+500*tier)*(hasBiz('banco')?1.5:1)))}. Solo pierdes si superas ese límite. Cada 6 rondas llega un evento de temporada que cambia las reglas.</p>`});
+  m.btn('Volver','',()=>m.close());
+  m.btn(ic('dice')+'Jugar','pri',()=>{m.close();$('#hub').hidden=true;Snd.get();boot(newImperioGame(zi))});
+}
+function openSkills(){
+  const m=modal({title:'Árbol de mejoras',cls:'wide',closable:true,help:'mejoras',onClose:openHub});
+  const draw=()=>{
+    const allMax=Object.keys(SKILLS).every(k=>skill(k)>=4);
+    m.body.innerHTML=`<p class="lead">Tienes <b class="gold">${PROF.points}</b> ${PROF.points===1?'punto':'puntos'}. Ganas uno cada vez que subes de nivel. Las mejoras son para siempre.</p>
+    <div class="tree" style="margin-top:14px">${Object.entries(SKILLS).map(([k,s])=>`<div class="branch"><h4>${ic(s.i)}${s.n}</h4>${[1,2,3,4].map(t=>`<div class="node${skill(k)>=t?' on':''}">${ic(skill(k)>=t?'check':'lock')}<span>Nivel ${t}: ${s.d(t)}</span></div>`).join('')}<button class="btn sm pri" type="button" data-sk="${k}" ${PROF.points<1||skill(k)>=4?'disabled':''}>${skill(k)>=4?'Completo':'Mejorar · 1 punto'}</button></div>`).join('')}</div>
+    ${allMax&&PROF.points?`<button class="btn" type="button" id="cashPt" style="margin-top:12px">Canjear 1 punto por 300 € de capital</button>`:''}`;
+    m.body.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{if(PROF.points<1)return;PROF.points--;PROF.skills[b.dataset.sk]++;saveProf();Snd.buy();draw()});
+    const c=m.body.querySelector('#cashPt');if(c)c.onclick=()=>{PROF.points--;PROF.capital+=300;saveProf();draw()};
+  };
+  draw();m.btn('Listo','pri',()=>m.close());
+}
+function openBiz(){
+  const m=modal({title:'Negocios',cls:'wide',closable:true,help:'imperio',onClose:openHub});
+  const draw=()=>{
+    m.body.innerHTML=`<p class="lead">Compra negocios con tu capital. Funcionan en todas tus partidas de Imperio. Capital disponible: <b class="gold">${fmt(PROF.capital)}</b>.</p>${BIZ.map(b=>`<div class="mrow"><div class="nm2">${b.n}<small>${b.d}</small></div><div class="bt">${hasBiz(b.id)?`<span class="pill">${ic('check')}Tuyo</span>`:`<button class="btn sm pri" type="button" data-b="${b.id}" ${PROF.capital<b.c?'disabled':''}>Comprar · ${fmt(b.c)}</button>`}</div></div>`).join('')}`;
+    m.body.querySelectorAll('[data-b]').forEach(x=>x.onclick=()=>{const b=BIZ.find(y=>y.id===x.dataset.b);if(PROF.capital<b.c)return;PROF.capital-=b.c;PROF.biz[b.id]=1;checkAch(true);saveProf();Snd.buy();draw()});
+  };
+  draw();m.btn('Listo','pri',()=>m.close());
+}
+function openAlbum(){
+  const list=[{id:'clasico',name:'Barcelona clásica',src:null},...ZONES.map(z=>({id:z.id,name:z.name,src:z}))];
+  const html=list.map(z=>{
+    const al=PROF.album[z.id]||[];const names=BOARD.map((s,i)=>i).filter(i=>ownable(i));
+    const nameOf=i=>z.src?(STREET_IDX.includes(i)?z.src.streets[STREET_IDX.indexOf(i)]:RAIL_IDX.includes(i)?z.src.rails[RAIL_IDX.indexOf(i)]:DEFAULT_NAMES[i].name):DEFAULT_NAMES[i].name;
+    return `<div class="grp-h">${esc(z.name)} · ${al.length}/28</div><div class="alb">${names.map(i=>`<span class="${al.includes(i)?'on':''}" style="--cc:${gcol(i)}">${esc(nameOf(i))}</span>`).join('')}</div>`}).join('');
+  const m=modal({title:'Álbum de calles',cls:'wide',closable:true,onClose:openHub,html:`<p class="lead">Cada calle que tengas alguna vez en una partida se queda en tu álbum. Completa una zona entera para conseguir el logro «Coleccionista».</p>${html}`});
+  m.btn('Cerrar','pri',()=>m.close());
+}
+function openAch(){
+  const m=modal({title:'Logros',cls:'wide',closable:true,onClose:openHub,html:`<p class="lead">Cada logro te da 100 € de capital. Llevas ${Object.keys(PROF.ach).length} de ${ACH.length}.</p>${ACH.map(a=>`<div class="mrow ach${PROF.ach[a.id]?' on':''}">${ic(PROF.ach[a.id]?'medal':'lock')}<div class="nm2">${a.n}<small>${a.d}</small></div></div>`).join('')}`});
+  m.btn('Cerrar','pri',()=>m.close());
+}
+function openStats(){
+  const s=PROF.stats,lucky=Object.entries(s.streets).sort((a,b)=>b[1]-a[1])[0];
+  const row=(l,v)=>`<div class="kv"><span>${l}</span><b>${v}</b></div>`;
+  const m=modal({title:'Estadísticas',closable:true,onClose:openHub,html:
+    row('Partidas jugadas',s.played)+row('Partidas ganadas',`${s.wins}${s.played?` (${Math.round(s.wins/s.played*100)} %)`:''}`)+
+    row('Clásico',`${s.modes.clasico.w} de ${s.modes.clasico.p}`)+row('El Golpe',`${s.modes.golpe.w} de ${s.modes.golpe.p}`)+row('Imperio',`${s.modes.imperio.w} de ${s.modes.imperio.p}`)+
+    row('Jefes derrotados',s.bosses)+row('Zonas desbloqueadas',PROF.progress+1)+row('Dinero cobrado en alquileres',fmt(s.rentIn))+
+    row('Mayor patrimonio en una partida',fmt(s.bestNW))+row('Tu calle de la suerte',lucky?`${esc(lucky[0])} (${fmt(lucky[1])})`:'—')+
+    row('Racha de días',`${PROF.daily.streak} (récord ${PROF.daily.max})`)});
+  m.btn('Cerrar','pri',()=>m.close());
+}
+function openLook(){
+  const m=modal({title:'Personalizar',cls:'wide',closable:true,onClose:openHub});
+  const draw=()=>{
+    const opt=(kind,o)=>{const ok=lookOk(o),on=PROF.look[kind]===o.id;return `<button type="button" class="lk lk-${kind}-${o.id}${on?' on':''}" data-k="${kind}" data-v="${o.id}" ${ok?'':'disabled'}><span class="sample"></span><b>${o.n}</b><small>${ok?(on?'En uso':'Disponible'):lookReq(o)}</small></button>`};
+    m.body.innerHTML=`<p class="lead">Desbloquea estilos subiendo de nivel y consiguiendo logros. Se aplican a todos los modos.</p>
+    <div class="fl" style="margin-top:14px">Mesa de juego</div><div class="lkgrid">${LOOKS.theme.map(o=>opt('theme',o)).join('')}</div>
+    <div class="fl" style="margin-top:14px">Dados</div><div class="lkgrid">${LOOKS.dice.map(o=>opt('dice',o)).join('')}</div>
+    <div class="fl" style="margin-top:14px">Fichas especiales</div><div class="lkgrid">${TOKENS.filter(t=>t.lv).map(t=>`<button type="button" class="lk${PROF.token===t.id?' on':''}" data-tok="${t.id}" ${tokOk(t)?'':'disabled'}>${disc({color:SEAT_COLORS[0],token:t.id})}<b>${t.n}</b><small>${tokOk(t)?(PROF.token===t.id?'En uso':'Disponible'):'Nivel '+t.lv}</small></button>`).join('')}</div>`;
+    m.body.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{PROF.look[b.dataset.k]=b.dataset.v;saveProf();applyLook();draw()});
+    m.body.querySelectorAll('[data-tok]').forEach(b=>b.onclick=()=>{PROF.token=b.dataset.tok;pickTok=b.dataset.tok;saveProf();draw()});
+  };
+  draw();m.btn('Listo','pri',()=>m.close());
 }
 
 /* =================== turnos =================== */
@@ -1758,6 +2268,7 @@ async function playTurn(p){
   G.doublesNow=false;render();logTurn(p);
   if(CAM.mode==='free')CAM.mode=CAM.pref;
   camRefresh(800);turnBanner(p);Snd.turn();
+  if(G.mode==='imperio')await impTurnStart(p);
   if(G.mode==='golpe'){if(p.bot)say(`Turno de ${nm(p)}`);await sleep(p.bot?1100:500);await playTurnGolpe(p);return}
   if(p.bot){showBotTurn(p);say(`Turno de ${nm(p)}`);await sleep(1200)}else{vib(15);$('#actions').innerHTML='';await wait(650)}
   if(p.jail){const r=await jailPhase(p);if(r==='done'){if(!p.out)await endPhase(p);return}}
@@ -1783,11 +2294,12 @@ async function endPhase(p){
 function nextTurn(){let n=G.turn;do{n=(n+1)%G.players.length;if(n===G.firstTurn)G.round++}while(G.players[n].out);G.turn=n}
 async function checkEnd(){
   const act=active();
+  if(G.mode==='imperio'){const h=G.players[0],boss=G.players.find(p=>p.boss);if(h.out){G.over=true;clearSave();render();impFinish(false);return true}if((boss&&boss.out)||act.length===1){G.over=true;clearSave();render();impFinish(true);return true}return false}
   if(G.mode==='golpe'){const w=golpeEnd();if(w){G.over=true;clearSave();render();showWinnerGolpe(w);return true}return false}
   if(act.length<=1){G.over=true;clearSave();render();showWinner(act[0]);return true}
   const h=G.players[0];
   if(h.out&&!G.humanOutShown){
-    G.humanOutShown=true;
+    G.humanOutShown=true;recordMatch('clasico',false);
     const v=await ask('Has quebrado','<p class="lead">Te has quedado sin dinero. Puedes ver cómo terminan la partida tus rivales o empezar una nueva.</p>',[{label:'Nueva partida',v:'new'},{label:'Ver el final',cls:'pri',v:'watch'}]);
     if(v==='new'){clearSave();goStart();return true}
     CFG.speed=.5;updSpeed();
@@ -1795,6 +2307,7 @@ async function checkEnd(){
   return false;
 }
 function showWinner(w){
+  recordMatch('clasico',!!(w&&!w.bot));
   Snd.win();vib([40,60,40,60,80]);
   const rest=G.players.filter(p=>p!==w).sort((a,b)=>(b.outOrder||0)-(a.outOrder||0));
   const isMe=w&&!w.bot;
@@ -1885,6 +2398,8 @@ function openHelp(key='basico'){
 }
 
 Object.assign(HELP,{
+  imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas zonas una a una: tres barrios de Barcelona y después Madrid, València, Sevilla, París, Londres, Nueva York y Tokio. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
+  mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
   golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival; en ese caso, además, le pagas el alquiler. Si te pillan, <b>pierdes todo el botín del turno</b>.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> el primero que complete <b>2 grupos de color</b>. Si se reparten todas las calles antes, gana quien tenga más patrimonio. Puedes construir y negociar como en el modo clásico.</p>`],
   camara:['La cámara',`<p>La cámara sigue al jugador que tiene el turno para que veas bien cada casilla.</p><ul><li><b>Seguir</b> (botón de la diana): acerca la vista y acompaña a la ficha que se mueve.</li><li><b>Tablero</b> (botón de la cuadrícula): muestra el tablero entero.</li><li>En el móvil puedes <b>pellizcar</b> para acercar o alejar y <b>arrastrar</b> para moverte. En el ordenador, usa la rueda del ratón y arrastra.</li><li>Doble toque: acerca la vista o vuelve al tablero entero.</li></ul><p>Si mueves la vista a mano, al empezar el siguiente turno vuelve al modo que elegiste.</p>`],
   instalar:['Instalar la app',`<p>Magnate se puede instalar en el móvil o en el ordenador como una app: icono propio, pantalla completa y funciona sin conexión.</p><p>Toca <b>Instalar en el móvil</b> en el menú para ver los pasos de tu dispositivo.</p>`],
@@ -2057,13 +2572,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='+'||e.key==='=')camZoom(1.25);if(e.key==='-')camZoom(.8);
 });
 let pickTok='hat',pickMode='clasico';
-const MODES=[{id:'clasico',n:'Clásico',i:'deed',d:'Las reglas de siempre: comprar, construir y arruinar a tus rivales.'},{id:'golpe',n:'El Golpe',i:'dice',d:'Tira cuanto quieras para llenar tu botín… y plántate antes de que te pillen.'},{id:'imperio',n:'Imperio',i:'trophy',d:'Campaña larga por temporadas y ciudades.',soon:true}];
-function drawModes(){$('#modePick').innerHTML=MODES.map(m=>`<button type="button" class="mode${m.id===pickMode?' on':''}" data-mode="${m.id}" ${m.soon?'disabled':''}><b>${ic(m.i)}${m.n}${m.soon?' <span class="soon">Pronto</span>':''}</b><small>${m.d}</small></button>`).join('');$('#modePick').querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{pickMode=b.dataset.mode;drawModes()})}
+const MODES=[{id:'clasico',n:'Clásico',i:'deed',d:'Las reglas de siempre: comprar, construir y arruinar a tus rivales.'},{id:'golpe',n:'El Golpe',i:'dice',d:'Tira cuanto quieras para llenar tu botín… y plántate antes de que te pillen.'},{id:'imperio',n:'Imperio',i:'trophy',d:'Campaña por barrios y ciudades: sube de nivel y conquista el mundo.'}];
+function drawModes(){$('#modePick').innerHTML=MODES.map(m=>`<button type="button" class="mode${m.id===pickMode?' on':''}" data-mode="${m.id}" ${m.soon?'disabled':''}><b>${ic(m.i)}${m.n}${m.soon?' <span class="soon">Pronto</span>':''}</b><small>${m.d}</small></button>`).join('');$('#modePick').querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{pickMode=b.dataset.mode;drawModes()});$('#bNew').textContent=pickMode==='imperio'?'Abrir campaña':'Empezar partida'}
 function goStart(){
+  $('#hub').hidden=true;
   RUN++;PAUSED=false;closeAll();closeSide();G=null;updPause();
   $('#start').hidden=false;
   const tp=$('#tokpick');tp.innerHTML='';
-  TOKENS.forEach(t=>{const b=el('button',t.id===pickTok?'on':'',`${disc({color:SEAT_COLORS[0],token:t.id})}${t.n}`);b.type='button';b.setAttribute('aria-pressed',t.id===pickTok);b.onclick=()=>{pickTok=t.id;tp.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)})};tp.appendChild(b)});
+  if(!tokOk(TOKENS.find(t=>t.id===pickTok)||{}))pickTok='hat';
+  TOKENS.forEach(t=>{const b=el('button',t.id===pickTok?'on':'',`${disc({color:SEAT_COLORS[0],token:t.id})}${tokOk(t)?t.n:'Nivel '+t.lv}`);b.type='button';b.disabled=!tokOk(t);b.setAttribute('aria-pressed',t.id===pickTok);b.onclick=()=>{pickTok=t.id;tp.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)})};tp.appendChild(b)});
   updSpeed();drawModes();
   $('#bInstall2').hidden=isStandalone();
   const sv=loadSave();
@@ -2072,16 +2589,19 @@ function goStart(){
 }
 function boot(g){
   RUN++;PAUSED=false;closeAll();closeSide();G=g;updPause();
-  $('#start').hidden=true;
+  $('#start').hidden=true;$('#hub').hidden=true;
   CAM.mode=CAM.pref;
+  applyZone(g.mode==='imperio'&&g.imp?zoneOf(g.imp.zi):null);
+  g.track=g.track||{rentIn:0,buys:0,builds:0,streets:{}};
   buildBoard();createTokens();buildPlayerRows();renderLog();render();layout();
   $('#diceSum').textContent='';setDie($('#d1'),1);setDie($('#d2'),1);
   if(G.started)say(`Partida recuperada. Ronda ${G.round}.`);
   gameLoop();
 }
-$('#bNew').onclick=()=>{Snd.get();boot(newGame($('#pname').value.trim().slice(0,14)||'Tú',pickTok,pickMode))};
+$('#bNew').onclick=()=>{Snd.get();if(pickMode==='imperio'){PROF.name=$('#pname').value.trim().slice(0,14)||'Tú';PROF.token=pickTok;saveProf();openHub();return}boot(newGame($('#pname').value.trim().slice(0,14)||'Tú',pickTok,pickMode))};
 $('#bCont').onclick=()=>{Snd.get();const s=loadSave();if(s)boot(s)};
 if(window.__PWA__&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+applyLook();if(PROF.name)$('#pname').value=PROF.name;if(PROF.token)pickTok=PROF.token;
 updSound();updSpeed();updPause();
 buildCubes();setDie($('#d1'),1);setDie($('#d2'),1);
 buildBoard();layout();goStart();
