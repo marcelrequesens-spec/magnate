@@ -421,6 +421,38 @@ html.pwa .start{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bo
 .sacts{display:flex;flex-direction:column;gap:8px}
 .sacts .btn{width:100%}
 
+
+/* ---------- El Golpe ---------- */
+#loot{background:var(--bg);border:1px solid var(--line-2);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;animation:tin .35s var(--ease)}
+.lt-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lt-t{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lt-t .ic{color:var(--brass);width:15px;height:15px}
+.lt-v{font-family:var(--f-display);font-weight:800;font-size:24px;color:var(--brass-hi);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.lt-items{display:flex;flex-wrap:wrap;gap:5px}
+.lchip{font-size:12px;font-weight:700;padding:3px 9px 3px 7px;border-radius:20px;background:var(--surface-2);display:inline-flex;align-items:center;gap:5px;animation:pop .3s var(--ease)}
+.lchip::before{content:"";width:8px;height:12px;border-radius:2px;background:var(--cc,var(--brass))}
+.lchip.cash{color:var(--brass-hi)}.lchip.cash::before{display:none}
+.risk{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:center;font-size:12px;color:var(--muted)}
+.risk b{font-size:15px;font-variant-numeric:tabular-nums}.risk b.lo{color:var(--good)}.risk b.mid{color:var(--brass-hi)}.risk b.hi{color:var(--bad)}
+.rbar{grid-column:1/3;height:7px;border-radius:7px;background:var(--surface-3);overflow:hidden}
+.rbar i{display:block;height:100%;background:linear-gradient(90deg,var(--good),var(--brass) 50%,var(--bad));border-radius:7px;transition:width .5s var(--ease)}
+.sq.police{background:#f5ddd6}.sq.police:hover{background:#f8e6e1}
+.pol-ic{color:#b8322a}
+.own.pend{background:repeating-linear-gradient(90deg,var(--pc) 0 7px,transparent 7px 12px)!important;animation:pend 1s ease-in-out infinite alternate}
+@keyframes pend{to{opacity:.45}}
+.gcard.golpe{background:linear-gradient(160deg,#2b3a4a,#16212c);color:#f1f4f6;border:1px solid var(--brass)}
+.gcard.golpe .t{color:var(--brass-hi)}.gcard.golpe .sym svg{color:var(--brass-hi)}
+#banner .bx.big{padding:14px 30px}
+#banner .bx.big b{font-size:34px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-align:left;font-family:inherit;transition:transform .15s var(--ease),border-color .2s}
+.mode b{font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:-.01em;display:flex;align-items:center;gap:6px}
+.mode b .ic{width:17px;height:17px;color:var(--brass)}
+.mode small{font-size:12px;color:var(--muted);line-height:1.35}
+.mode.on{border-color:var(--brass);background:#2c2a1d;transform:translateY(-2px)}
+.mode:disabled{opacity:.45;cursor:not-allowed}
+.mode .soon{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--on-brass);background:var(--brass);padding:1px 6px;border-radius:8px}
+@media (max-width:560px){.modes{grid-template-columns:1fr}.mode{flex-direction:row;flex-wrap:wrap;align-items:center}.mode small{flex-basis:100%}}
 @media (max-width:999px),(max-aspect-ratio:5/4){
   .sgrid{grid-template-columns:1fr;gap:26px}
   .hero ul{display:none}
@@ -433,6 +465,7 @@ html.pwa .start{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bo
   .brand small{display:none}
 }
 @media (max-height:700px){html:not(.wide) #tabs{display:none}}
+html:not(.wide) #dock:has(#loot:not([hidden])) #tabs{display:none}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
 </style>
 </head>
@@ -469,6 +502,7 @@ html.pwa .start{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bo
   </section>
   <footer id="dock">
     <div class="dk-head"><span id="dkDisc"></span><div class="dk-txt"><div id="turnLbl"></div><div id="evMain"></div></div><div class="dk-dice"><div class="die" id="d1"></div><div class="die" id="d2"></div><b id="diceSum"></b></div></div>
+    <div id="loot" hidden></div>
     <div id="actions"></div>
     <nav id="tabs" class="only-m">
       <button type="button" data-open="players"><svg class="ic"><use href="#i-users"/></svg>Jugadores</button>
@@ -503,6 +537,7 @@ html.pwa .start{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bo
     <div class="scard">
       <h2>Nueva partida</h2>
       <div><label class="fl" for="pname">Tu nombre</label><input id="pname" maxlength="14" value="Marcel" autocomplete="off"></div>
+      <div><span class="fl">Modo de juego</span><div class="modes" id="modePick"></div></div>
       <div><span class="fl">Tu ficha</span><div id="tokpick" class="tokpick"></div></div>
       <div><span class="fl">Ritmo de los rivales</span><div class="seg" id="segSpeed"></div></div>
       <div><span class="fl">Rivales</span><div class="rivals"><span class="mystery">?</span><span class="mystery">?</span><span class="mystery">?</span><span>Nombres y estilos al azar. Los descubrirás al final.</span></div></div>
@@ -749,11 +784,11 @@ const nm=p=>`<b class="who" style="--pc:${p.color}">${esc(p.name)}</b>`;
 const pn=i=>`<b class="sqn" style="--cc:${gcol(i)}">${BOARD[i].name}</b>`;
 const unmortCost=i=>Math.round(BOARD[i].price/2*1.1);
 
-function newGame(name,token){
+function newGame(name,token,mode){
   const others=shuffle(TOKENS.map(t=>t.id).filter(t=>t!==token));
   const names=shuffle(BOT_NAMES.filter(n=>n.toLowerCase()!==String(name).toLowerCase())).slice(0,3);
   const archs=shuffle(Object.keys(ARCH)).slice(0,3);
-  const g={v:2,players:[],props:{},houses:32,hotels:12,decks:{chance:shuffle([...Array(16).keys()]),chest:shuffle([...Array(16).keys()])},turn:0,round:1,over:false,log:[],cool:{},outCount:0,lastDice:7,started:false};
+  const g={v:2,mode:mode||'clasico',players:[],props:{},houses:32,hotels:12,decks:{chance:shuffle([...Array(16).keys()]),chest:shuffle([...Array(16).keys()])},turn:0,round:1,over:false,log:[],cool:{},outCount:0,lastDice:7,started:false};
   g.players.push({id:0,name:name||'Tú',token,color:SEAT_COLORS[0],bot:false,money:1500,pos:0,jail:false,jailTurns:0,cards:[],out:false});
   for(let k=0;k<3;k++)g.players.push({id:k+1,name:names[k],token:others[k],color:SEAT_COLORS[k+1],bot:true,pers:makePers(archs[k]),money:1500,pos:0,jail:false,jailTurns:0,cards:[],out:false});
   BOARD.forEach((s,i)=>{if(ownable(i))g.props[i]={owner:null,houses:0,mort:false}});
@@ -860,10 +895,12 @@ function buildBoard(){
     else if(sq.type==='util')h=`<div class="nm top">${sq.label}</div>${bic(sq.icon,'util-ic')}<div class="pr">${sq.price} €</div><div class="own"></div>`;
     else if(sq.type==='chance')h=`<div class="nm top">Suerte</div><div class="bi"><span class="qmark">?</span></div>`;
     else if(sq.type==='chest')h=`<div class="nm top">Caja de Comunidad</div>${bic('chest','ch-ic')}`;
+    else if(G&&G.mode==='golpe'&&POLICE.includes(i)&&sq.type==='tax'){h=`<div class="nm top">Control policial</div>${bic('shield','pol-ic')}<div class="pr">Pierdes el botín</div>`;c.classList.add('police')}
     else if(sq.type==='tax')h=`<div class="nm top">${sq.label}</div>${bic(sq.icon,'tax-ic')}<div class="pr">Paga ${sq.amount} €</div>`;
     else if(sq.type==='go')h=`<div class="cs">Cobra 200 €<br>al pasar</div><b>SALIDA</b><svg><use href="#i-arrow"/></svg>`;
     else if(sq.type==='jail')h=`<div class="jcell"><span>CÁRCEL</span></div><div class="visit">SOLO DE VISITA</div>`;
     else if(sq.type==='parking')h=`<div class="cs">Parking</div><div class="park-p">P</div><div class="cs">gratuito</div>`;
+    else if(sq.type==='gotojail'&&G&&G.mode==='golpe'){h=`<div class="cs">Policía</div><svg class="cic pol-ic"><use href="#i-shield"/></svg><div class="cs">te pilla</div>`;c.classList.add('police')}
     else if(sq.type==='gotojail')h=`<div class="cs">Vaya a la</div><svg class="cic"><use href="#i-shield"/></svg><div class="cs">cárcel</div>`;
     c.innerHTML=`<div class="in">${h}</div>`;
     c.addEventListener('click',()=>{if(!camMoved())showSquare(i)});
@@ -881,7 +918,7 @@ function renderBoard(){
   for(const i in G.props){
     const st=G.props[i],c=cells[i],band=c.querySelector('.band');
     if(band){const want=st.houses===5?'<i class="H"></i>':'<i class="h"></i>'.repeat(st.houses);if(band.innerHTML!==want)band.innerHTML=want}
-    const own=c.querySelector('.own');if(own)own.style.background=st.owner!=null?P(st.owner).color:'transparent';
+    const own=c.querySelector('.own');if(own){own.classList.toggle('pend',st.pend!=null);if(st.pend!=null)own.style.setProperty('--pc',P(st.pend).color);own.style.background=st.owner!=null?P(st.owner).color:'transparent'}
     c.classList.toggle('mort',st.mort);
   }
 }
@@ -976,7 +1013,7 @@ function render(){
   const p=G.players[G.turn];
   $('#dkDisc').innerHTML=G.started?disc(p,'lg'):'';
   $('#turnLbl').innerHTML=G.over?'Partida terminada':!G.started?'Sorteo de turno':p.bot?`Turno de ${esc(p.name)}`:'Tu turno';
-  $('#round').textContent=G.started?`Ronda ${G.round}`:'Inicio';
+  $('#round').textContent=(G.mode==='golpe'?'El Golpe · ':'')+(G.started?`Ronda ${G.round}`:'Inicio');
   $('#pausedTag').hidden=!PAUSED;
 }
 
@@ -1022,6 +1059,7 @@ function deedHTML(i){
 const SQ_INFO={go:['salida','Cada vez que pases o caigas en la SALIDA cobras 200 €.'],chance:['cartas','Roba una carta de Suerte y cumple lo que dice.'],chest:['cartas','Roba una carta de Caja de Comunidad y cumple lo que dice.'],jail:['carcel','Si solo caes aquí, estás de visita y no pasa nada. Si te mandan a la cárcel, te quedas en la celda hasta que pagues 50 €, uses una carta o saques dobles.'],parking:['basico','Casilla de descanso. No cobras ni pagas nada.'],gotojail:['carcel','Vas directamente a la cárcel, sin pasar por la SALIDA ni cobrar 200 €.']};
 function showSquare(i){
   const sq=BOARD[i];
+  if(isGolpe()&&POLICE.includes(i)){const m=modal({title:'Control policial',html:'<p class="lead">En El Golpe, si caes aquí la policía te pilla y pierdes todo el botín del turno.</p>',help:'golpe',closable:true});m.btn('Cerrar','',()=>m.close());return}
   if(ownable(i)){
     const st=G&&G.props[i];
     let side='';
@@ -1516,6 +1554,164 @@ async function drawCard(p,deck){
   render();
 }
 
+/* =================== modo El Golpe =================== */
+const POLICE=[4,30,38];
+const GOLPE_RISK={agresivo:.42,prudente:.22,negociador:.3,equilibrado:.32,constructor:.28};
+const DICE_P={2:1,3:2,4:3,5:4,6:5,7:6,8:5,9:4,10:3,11:2,12:1};
+const GCARDS=[
+  {t:'Caja fuerte abierta: +150 € al botín.',k:'cash',v:150,w:3},
+  {t:'Un soplo: en tu próxima tirada no te pueden pillar.',k:'shield',w:2},
+  {t:'Chivatazo: pierdes la mitad del dinero del botín.',k:'half',w:2},
+  {t:'Coche de huida: te plantas ahora y el dinero del botín vale el doble.',k:'escape',w:1},
+  {t:'Calle sin vigilancia: una calle libre al azar entra en tu botín.',k:'street',w:2},
+  {t:'Comisión: cada rival aporta 50 € a tu botín.',k:'tax',v:50,w:2},
+  {t:'¡Redada! La policía te pilla.',k:'raid',w:1},
+  {t:'Golpe maestro: el dinero del botín se duplica.',k:'double',w:1},
+];
+const isGolpe=()=>G&&G.mode==='golpe';
+function golpeCard(){const tot=GCARDS.reduce((s,c)=>s+c.w,0);let r=Math.random()*tot;for(const c of GCARDS){if((r-=c.w)<0)return c}return GCARDS[0]}
+function isBust(p,i){if(POLICE.includes(i))return true;if(!ownable(i))return false;const st=G.props[i];return st.owner!=null&&st.owner!==p.id&&!st.mort}
+function bustRisk(p){let r=0;for(const s in DICE_P){if(isBust(p,(p.pos+ +s)%40))r+=DICE_P[s]/36}return Math.min(1,r)}
+const lootValue=L=>L.cash+L.props.reduce((s,i)=>s+BOARD[i].price,0);
+const fullGroups=pid=>GORDER.filter(g=>GW[g]&&ownsAll(pid,g)).length;
+function renderLoot(L,p){
+  const box=$('#loot');if(!L){box.hidden=true;return}
+  box.hidden=false;const r=bustRisk(p),pct=Math.round(r*100);
+  box.innerHTML=`<div class="lt-h"><span class="lt-t">${ic('cash')}Botín de ${p.bot?esc(p.name):'tu golpe'}</span><b class="lt-v">${fmt(lootValue(L))}</b></div>
+  <div class="lt-items">${L.cash?`<span class="lchip cash">${fmt(L.cash)}</span>`:''}${L.props.map(i=>`<span class="lchip" style="--cc:${gcol(i)}">${BOARD[i].name}</span>`).join('')}${!L.cash&&!L.props.length?'<span class="note" style="font-size:12.5px">Vacío. Cada tirada puede llenarlo… o vaciarlo.</span>':''}</div>
+  <div class="risk"><span>Riesgo de que te pillen en la próxima tirada</span><b class="${L.shield?'lo':r>.35?'hi':r>.2?'mid':'lo'}">${L.shield?'Protegido':pct+' %'}</b><div class="rbar"><i style="width:${L.shield?0:pct}%"></i></div></div>`;
+}
+function bigBanner(title,sub,color){
+  const b=$('#banner');
+  b.innerHTML=`<div class="bx big" style="--pc:${color}"><div><small>${sub}</small><b>${title}</b></div></div>`;
+  b.classList.remove('show');void b.offsetWidth;b.classList.add('show');
+}
+async function showGolpeCard(p,c){
+  Snd.card();
+  const html=`<div class="gcard golpe"><div class="t">CARTA DE GOLPE</div><div class="sym"><svg><use href="#i-${c.k==='raid'?'shield':c.k==='shield'?'unlock':c.k==='escape'?'car':'cash'}"/></svg></div><p>${c.t}</p><div class="whoc">${disc(p,'sm')}${esc(p.name)}</div></div>`;
+  if(!p.bot){await ask('',html,[{label:'Continuar',cls:'pri',v:1}],{help:'golpe'});return}
+  const m=modal({html});let done=false;m.btn('Continuar','',()=>{done=true;m.close()});
+  const r=RUN;await new Promise(res=>{const t0=Date.now(),tick=()=>{if(r!==RUN)return;if(done||(!PAUSED&&Date.now()-t0>2800*CFG.speed)){res();return}setTimeout(tick,100)};tick()});
+  m.close();
+}
+async function applyGolpeCard(p,L,c){
+  switch(c.k){
+    case 'cash':L.cash+=c.v;Snd.cash();break;
+    case 'shield':L.shield=true;break;
+    case 'half':L.cash=Math.floor(L.cash/2/10)*10;break;
+    case 'escape':L.cash*=2;return 'bank';
+    case 'street':{const free=Object.keys(G.props).map(Number).filter(i=>G.props[i].owner==null&&G.props[i].pend==null);if(free.length){const i=free[rnd(free.length)];G.props[i].pend=p.id;L.props.push(i);log(`${pn(i)} entra en el botín de ${nm(p)}`,'buy','deed');renderBoard()}break}
+    case 'tax':for(const o of active()){if(o===p)continue;const v=Math.min(c.v,o.money);addMoney(o,-v);L.cash+=v}Snd.cash();render();break;
+    case 'raid':return 'bust';
+    case 'double':L.cash*=2;Snd.cash();break;
+  }
+  return 'ok';
+}
+async function golpeStep(p,L,d,shielded){
+  const t=tokEls[p.id];
+  for(let s=0;s<d.total;s++){
+    p.pos=(p.pos+1)%40;
+    if(p.pos===0){L.cash+=200;log(`${nm(p)} pasa por la SALIDA: +200 € al botín`,'good');Snd.cash();renderLoot(L,p)}
+    placeTokens();if(t){t.classList.remove('hop');void t.offsetWidth;t.classList.add('hop')}
+    camFollowPlayer(p,320);Snd.step();await sleep(210);
+  }
+  flash(p.pos);await sleep(300);
+  const i=p.pos,sq=BOARD[i];
+  if(d.double){L.cash+=50;log(`${nm(p)} saca dobles: +50 € al botín`,'good','dice')}
+  if(isBust(p,i)){
+    if(shielded){log(`${nm(p)} cae en ${ownable(i)?pn(i):'un control policial'}, pero el soplo le salva`,'free','unlock');return 'ok'}
+    if(POLICE.includes(i)){log(`${nm(p)} cae en un control policial`,'jail','shield');return 'bust'}
+    const ow=P(G.props[i].owner),rent=Math.min(p.money,rentOf(i,d.total));
+    if(rent){addMoney(p,-rent);addMoney(ow,rent)}
+    log(`${nm(p)} cae en ${pn(i)}, de ${nm(ow)}: le paga ${fmt(rent)} y pierde el botín`,'bad');
+    return 'bust';
+  }
+  if(ownable(i)){
+    const st=G.props[i];
+    if(st.owner==null&&st.pend==null){st.pend=p.id;L.props.push(i);log(`${nm(p)} mete ${pn(i)} en el botín`,'buy','deed');Snd.buy();renderBoard()}
+    else if(st.owner===p.id){const v=Math.max(10,rentOf(i,d.total));L.cash+=v;log(`${nm(p)} cobra ${fmt(v)} de sus inquilinos en ${pn(i)}`,'good');Snd.cash()}
+    else if(st.pend===p.id)log(`${nm(p)} vuelve a pasar por ${pn(i)}`);
+    else log(`${pn(i)} está hipotecada: ${nm(p)} pasa sin problemas`);
+  }else if(sq.type==='chance'||sq.type==='chest'){
+    const c=golpeCard();log(`${nm(p)} roba una carta de golpe: «${c.t}»`,'','card');
+    await showGolpeCard(p,c);return applyGolpeCard(p,L,c);
+  }else if(sq.type==='parking'){L.cash+=100;log(`${nm(p)} encuentra 100 € en el parking`,'good');Snd.cash()}
+  else if(sq.type==='jail')log(`${nm(p)} pasa por delante de la cárcel sin que le vean`);
+  return 'ok';
+}
+async function bustLoot(p,L){
+  const lost=lootValue(L);
+  L.props.forEach(i=>{delete G.props[i].pend});
+  if(POLICE.includes(p.pos)){p.pos=10;p.jail=true;placeTokens();camFollowPlayer(p,600);Snd.jail()}else Snd.bust();
+  vib([40,50,40]);
+  bigBanner('¡Pillado!',lost?`${esc(p.name)} pierde un botín de ${fmt(lost)}`:`${esc(p.name)} se queda sin nada`,'#e8604c');
+  log(`${nm(p)} pierde el botín${lost?' de '+fmt(lost):''}`,'bad','down');
+  renderLoot(L,p);render();await sleep(1500);
+}
+async function bankLoot(p,L){
+  const v=lootValue(L);
+  addMoney(p,L.cash);
+  L.props.forEach(i=>{const st=G.props[i];delete st.pend;st.owner=p.id});
+  Snd.win();vib(25);
+  bigBanner(v?`+${fmt(v)}`:'Sin botín',v?`${esc(p.name)} pone a salvo su golpe${L.props.length?` y ${L.props.length} ${L.props.length>1?'calles':'calle'}`:''}`:`${esc(p.name)} se planta`,'#5fd197');
+  log(`${nm(p)} se planta y guarda ${fmt(L.cash)}${L.props.length?' y '+L.props.map(pn).join(', '):''}`,'big','lock');
+  render();announceGroups(p.id,L.props);
+  if(fullGroups(p.id)>=2)G.golpeWin=p.id;
+  await sleep(1500);
+}
+function golpeChoice(p,L){
+  return new Promise(res=>{
+    const acts=$('#actions');acts.innerHTML='';
+    const r=bustRisk(p),v=lootValue(L);
+    const b=el('button','btn grn mid',ic('lock')+`Plantarme · ${fmt(v)}`);b.type='button';b.onclick=()=>{acts.innerHTML='';res(false)};
+    const a=el('button','btn pri pulse',ic('dice')+'Tirar otra vez');a.type='button';a.onclick=()=>{acts.innerHTML='';res(true)};
+    const h=el('button','hq',ic('help'));h.type='button';h.setAttribute('aria-label','Cómo funciona El Golpe');h.onclick=()=>openHelp('golpe');h.style.alignSelf='center';
+    acts.append(b,a,h);
+    say(L.shield?'Tienes el soplo: en la próxima tirada no te pueden pillar.':`Hay un ${Math.round(r*100)} % de que te pillen en la próxima tirada. ¿Sigues o te plantas?`);
+  });
+}
+function botGolpeGo(p,L){
+  const v=lootValue(L);if(!v||L.shield)return true;
+  const t=(GOLPE_RISK[p.pers.arch]||.3)*(.85+Math.random()*.3);
+  return bustRisk(p)<t/(1+v/700);
+}
+async function playTurnGolpe(p){
+  p.jail=false;render();
+  const L={cash:0,props:[],shield:false};G.loot=L;
+  if(p.bot){showBotTurn(p);await sleep(500)}else await humanAction(p,'roll');
+  while(!G.over){
+    renderLoot(L,p);
+    if(p.bot)showBotTurn(p);else $('#actions').innerHTML='';
+    const d=await rollDice(p),sh=L.shield;L.shield=false;
+    const res=await golpeStep(p,L,d,sh);
+    renderLoot(L,p);
+    if(res==='bust'){await bustLoot(p,L);break}
+    if(res==='bank'){await bankLoot(p,L);break}
+    let go;
+    if(p.bot){say(`${nm(p)} se lo piensa: ${fmt(lootValue(L))} en juego`);await sleep(1100);go=botGolpeGo(p,L);if(go)log(`${nm(p)} se arriesga y tira otra vez`,'','dice')}
+    else go=await golpeChoice(p,L);
+    if(!go){await bankLoot(p,L);break}
+  }
+  G.loot=null;renderLoot(null);render();
+  if(!G.golpeWin)await endPhase(p);
+}
+function golpeEnd(){
+  if(G.golpeWin!=null)return P(G.golpeWin);
+  const two=active().find(p=>fullGroups(p.id)>=2);if(two){G.golpeWin=two.id;return two}
+  if(Object.values(G.props).every(s=>s.owner!=null))return active().slice().sort((a,b)=>netWorth(b)-netWorth(a))[0];
+  return null;
+}
+function showWinnerGolpe(w){
+  Snd.win();vib([40,60,40,60,80]);
+  const list=active().slice().sort((a,b)=>netWorth(b)-netWorth(a));
+  if(list[0]!==w){list.splice(list.indexOf(w),1);list.unshift(w)}
+  const isMe=!w.bot,how=G.golpeWin!=null?`completa ${fullGroups(w.id)} grupos de color`:'tiene el mayor patrimonio cuando ya no quedan calles libres';
+  const rows=list.map((p,k)=>`<div><span class="pos">${k+1}</span>${disc(p)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><small>${p.bot?ARCH[p.pers.arch].d:'Tú'}</small></div><span class="note">${fmt(netWorth(p))}</span></div>`).join('');
+  const m=modal({title:isMe?'¡Golpe perfecto, has ganado!':`Gana ${esc(w.name)}`,html:`<p class="lead">${isMe?'Tú':esc(w.name)} ${how}. La partida ha durado ${G.round} rondas.</p><div class="fl" style="margin-top:16px">Clasificación por patrimonio</div><div class="rank">${rows}</div>`});
+  m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-trophy"/></svg>`);
+  m.btn('Nueva partida','pri',()=>{m.close();goStart()});
+}
+
 /* =================== turnos =================== */
 function humanAction(p,mode){
   return new Promise(res=>{
@@ -1562,6 +1758,7 @@ async function playTurn(p){
   G.doublesNow=false;render();logTurn(p);
   if(CAM.mode==='free')CAM.mode=CAM.pref;
   camRefresh(800);turnBanner(p);Snd.turn();
+  if(G.mode==='golpe'){if(p.bot)say(`Turno de ${nm(p)}`);await sleep(p.bot?1100:500);await playTurnGolpe(p);return}
   if(p.bot){showBotTurn(p);say(`Turno de ${nm(p)}`);await sleep(1200)}else{vib(15);$('#actions').innerHTML='';await wait(650)}
   if(p.jail){const r=await jailPhase(p);if(r==='done'){if(!p.out)await endPhase(p);return}}
   let doubles=0;
@@ -1586,6 +1783,7 @@ async function endPhase(p){
 function nextTurn(){let n=G.turn;do{n=(n+1)%G.players.length;if(n===G.firstTurn)G.round++}while(G.players[n].out);G.turn=n}
 async function checkEnd(){
   const act=active();
+  if(G.mode==='golpe'){const w=golpeEnd();if(w){G.over=true;clearSave();render();showWinnerGolpe(w);return true}return false}
   if(act.length<=1){G.over=true;clearSave();render();showWinner(act[0]);return true}
   const h=G.players[0];
   if(h.out&&!G.humanOutShown){
@@ -1687,6 +1885,7 @@ function openHelp(key='basico'){
 }
 
 Object.assign(HELP,{
+  golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival; en ese caso, además, le pagas el alquiler. Si te pillan, <b>pierdes todo el botín del turno</b>.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> el primero que complete <b>2 grupos de color</b>. Si se reparten todas las calles antes, gana quien tenga más patrimonio. Puedes construir y negociar como en el modo clásico.</p>`],
   camara:['La cámara',`<p>La cámara sigue al jugador que tiene el turno para que veas bien cada casilla.</p><ul><li><b>Seguir</b> (botón de la diana): acerca la vista y acompaña a la ficha que se mueve.</li><li><b>Tablero</b> (botón de la cuadrícula): muestra el tablero entero.</li><li>En el móvil puedes <b>pellizcar</b> para acercar o alejar y <b>arrastrar</b> para moverte. En el ordenador, usa la rueda del ratón y arrastra.</li><li>Doble toque: acerca la vista o vuelve al tablero entero.</li></ul><p>Si mueves la vista a mano, al empezar el siguiente turno vuelve al modo que elegiste.</p>`],
   instalar:['Instalar la app',`<p>Magnate se puede instalar en el móvil o en el ordenador como una app: icono propio, pantalla completa y funciona sin conexión.</p><p>Toca <b>Instalar en el móvil</b> en el menú para ver los pasos de tu dispositivo.</p>`],
 });
@@ -1857,17 +2056,19 @@ document.addEventListener('keydown',e=>{
   if((e.key===' '||e.key==='Enter')&&!['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)){const b=$('#actions .pri');if(b){e.preventDefault();b.click()}}
   if(e.key==='+'||e.key==='=')camZoom(1.25);if(e.key==='-')camZoom(.8);
 });
-let pickTok='hat';
+let pickTok='hat',pickMode='clasico';
+const MODES=[{id:'clasico',n:'Clásico',i:'deed',d:'Las reglas de siempre: comprar, construir y arruinar a tus rivales.'},{id:'golpe',n:'El Golpe',i:'dice',d:'Tira cuanto quieras para llenar tu botín… y plántate antes de que te pillen.'},{id:'imperio',n:'Imperio',i:'trophy',d:'Campaña larga por temporadas y ciudades.',soon:true}];
+function drawModes(){$('#modePick').innerHTML=MODES.map(m=>`<button type="button" class="mode${m.id===pickMode?' on':''}" data-mode="${m.id}" ${m.soon?'disabled':''}><b>${ic(m.i)}${m.n}${m.soon?' <span class="soon">Pronto</span>':''}</b><small>${m.d}</small></button>`).join('');$('#modePick').querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{pickMode=b.dataset.mode;drawModes()})}
 function goStart(){
   RUN++;PAUSED=false;closeAll();closeSide();G=null;updPause();
   $('#start').hidden=false;
   const tp=$('#tokpick');tp.innerHTML='';
   TOKENS.forEach(t=>{const b=el('button',t.id===pickTok?'on':'',`${disc({color:SEAT_COLORS[0],token:t.id})}${t.n}`);b.type='button';b.setAttribute('aria-pressed',t.id===pickTok);b.onclick=()=>{pickTok=t.id;tp.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)})};tp.appendChild(b)});
-  updSpeed();
+  updSpeed();drawModes();
   $('#bInstall2').hidden=isStandalone();
   const sv=loadSave();
   $('#bCont').hidden=!sv;
-  $('#saveInfo').textContent=sv?`Hay una partida guardada en la ronda ${sv.round} con ${sv.players.filter(p=>!p.out).length} jugadores en juego.`:'La partida se guarda sola al empezar cada turno.';
+  $('#saveInfo').textContent=sv?`Hay una partida guardada${sv.mode==='golpe'?' de El Golpe':''} en la ronda ${sv.round} con ${sv.players.filter(p=>!p.out).length} jugadores en juego.`:'La partida se guarda sola al empezar cada turno.';
 }
 function boot(g){
   RUN++;PAUSED=false;closeAll();closeSide();G=g;updPause();
@@ -1878,7 +2079,7 @@ function boot(g){
   if(G.started)say(`Partida recuperada. Ronda ${G.round}.`);
   gameLoop();
 }
-$('#bNew').onclick=()=>{Snd.get();boot(newGame($('#pname').value.trim().slice(0,14)||'Tú',pickTok))};
+$('#bNew').onclick=()=>{Snd.get();boot(newGame($('#pname').value.trim().slice(0,14)||'Tú',pickTok,pickMode))};
 $('#bCont').onclick=()=>{Snd.get();const s=loadSave();if(s)boot(s)};
 if(window.__PWA__&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 updSound();updSpeed();updPause();
