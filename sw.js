@@ -1,6 +1,6 @@
 // Guarda la app para que funcione sin conexión. Cambia VERSION al publicar una actualización.
 // La caché «magnate-datos» guarda una copia de tu progreso y nunca se borra.
-const VERSION = 'magnate-v11-fortuna';
+const VERSION = 'magnate-v12-sin-deudas';
 const DATA = 'magnate-datos';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
