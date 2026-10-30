@@ -573,6 +573,13 @@ html[data-dice="negro"]{--die-a:#3f474f;--die-b:#16191d;--pip-c:#f3cb7b}
 .lk-dice-clasico .sample{background:linear-gradient(145deg,#fff,#ecebe3)}.lk-dice-rojo .sample{background:linear-gradient(145deg,#ee6a5c,#b52a20)}.lk-dice-oro .sample{background:linear-gradient(145deg,#ffe9a8,#e0ac4c)}.lk-dice-negro .sample{background:linear-gradient(145deg,#3f474f,#16191d)}
 .tokpick button:disabled{opacity:.4;cursor:not-allowed}
 @media (max-width:560px){.tree{grid-template-columns:1fr}.lkgrid{grid-template-columns:repeat(2,1fr)}.hub-stats{margin-left:0;width:100%}.hstat{flex:1}}
+.bankhead{display:flex;gap:12px;align-items:center;padding:14px;border-radius:18px;background:linear-gradient(120deg,#1d3550,var(--surface-2));margin-bottom:8px;border:1px solid var(--line-2)}
+.bankhead .ic{width:38px;height:38px;color:var(--brass-hi)}
+.bankhead small{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);font-weight:800}
+.bankhead b{display:block;font-family:var(--f-display);font-weight:800;font-size:18px;line-height:1.2}
+.loanbtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.loanbtns .btn{flex-direction:column;gap:2px;padding:12px 8px}
+.loanbtns .btn small{font-size:11.5px;font-weight:600;opacity:.75}
 /* ---------- El Golpe ---------- */
 #loot{background:var(--bg);border:1px solid var(--line-2);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;animation:tin .35s var(--ease)}
 .lt-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -1312,8 +1319,9 @@ function tradeable(i){const sq=BOARD[i];return !(sq.type==='street'&&groupBuilt(
 function openTrade(p,opt={}){
   const partners=G.players.filter(q=>q.id!==p.id&&!q.out);
   if(!partners.length)return;
-  let partner=partners[0],give=new Set(),get=new Set(),gCash=0,rCash=0,gCard=false,rCard=false;
-  const m=modal({title:'Negociar',cls:'wide',onClose:opt.onClose,help:'negociar',closable:true});
+  let partner=opt.partner&&!opt.partner.out?opt.partner:partners[0],give=new Set(),get=new Set(),gCash=0,rCash=0,gCard=false,rCard=false,traded=false;
+  if(opt.preset){const t=opt.preset;give=new Set(t.give);get=new Set(t.get);gCash=t.gCash||0;rCash=t.rCash||0;gCard=!!t.gCard;rCard=!!t.rCard}
+  const m=modal({title:opt.preset?`Contraoferta a ${esc(partner.name)}`:'Negociar',cls:'wide',onClose:()=>opt.onClose&&opt.onClose(traded),help:'negociar',closable:true});
   const chipList=(pid,set)=>{
     const ids=[];for(const g of GORDER)GROUPS[g].idx.forEach(i=>{if(G.props[i].owner===pid)ids.push(i)});
     if(!ids.length)return '<p class="note">Sin propiedades.</p>';
@@ -1348,7 +1356,7 @@ function openTrade(p,opt={}){
     if(botAccepts(partner.id,t)){
       const msg=['Trato hecho.','Me parece justo. Acepto.','De acuerdo, un placer negociar contigo.'][rnd(3)];
       give=new Set();get=new Set();gCash=0;rCash=0;gCard=false;rCard=false;
-      await execTrade(t);
+      await execTrade(t);traded=true;
       draw(`${disc(partner,'sm')}<span><b>${esc(partner.name)}:</b> ${msg}</span>`);
       return;
     }
@@ -1361,7 +1369,7 @@ function openTrade(p,opt={}){
   };
   m.btn('Cerrar','',()=>m.close());
   m.btn(ic('swap')+'Proponer trato','pri',()=>doTrade(false));
-  draw();
+  draw(opt.preset?`${disc(partner,'sm')}<span>Esta es la oferta de <b>${esc(partner.name)}</b>. Cámbiala como quieras: quita o añade calles y dinero, y pulsa «Proponer trato».</span>`:'');
 }
 function tradeSummaryHTML(t,viewer){
   const side=(props,cash,cn)=>{const li=props.map(i=>`<li>${pn(i)}${G.props[i].mort?' (hipotecada)':''}</li>`);if(cash)li.push(`<li><b class="gold">${fmt(cash)}</b></li>`);if(cn)li.push('<li>Carta «Libre de la cárcel»</li>');return li.length?`<ul>${li.join('')}</ul>`:'<p class="note">Nada</p>'};
@@ -1478,7 +1486,16 @@ async function botTryTrade(b){
   log(`${nm(b)} propone un trato a ${nm(T)}`,'trade');
   let ok;
   if(T.bot){await sleep(900);ok=botAccepts(T.id,d.t)}
-  else ok=await ask(`${esc(b.name)} te propone un trato`,tradeSummaryHTML(d.t,T.id)+`<p class="note" style="margin-top:12px">Tienes ${fmt(T.money)}. Piensa si le das un grupo completo.</p>`,[{label:'Rechazar',v:false},{label:ic('check')+'Aceptar trato',cls:'pri',v:true}],{help:'negociar'});
+  else{
+    ok=await ask(`${esc(b.name)} te propone un trato`,tradeSummaryHTML(d.t,T.id)+`<p class="note" style="margin-top:12px">Tienes ${fmt(T.money)}. Piensa si le das un grupo completo. Si no te convence del todo, hazle una contraoferta.</p>`,[{label:'Rechazar',v:false},{label:ic('swap')+'Contraoferta',v:'counter'},{label:ic('check')+'Aceptar',cls:'pri',v:true}],{help:'negociar'});
+    if(ok==='counter'){
+      const t=d.t;
+      log(`${nm(T)} le hace una contraoferta a ${nm(b)}`,'trade');
+      const traded=await new Promise(res=>openTrade(T,{partner:b,preset:{give:t.bProps,get:t.aProps,gCash:t.bCash,rCash:t.aCash,gCard:t.bCards>0,rCard:t.aCards>0},onClose:res}));
+      if(!traded)log(`${nm(T)} y ${nm(b)} no llegan a un acuerdo`,'trade');
+      G.cool[d.key]=G.round+4;return;
+    }
+  }
   if(ok&&d.t.aCash<=b.money)await execTrade(d.t);
   else{log(`${nm(T)} rechaza el trato de ${nm(b)}`,'trade');G.cool[d.key]=G.round+4}
 }
@@ -2049,6 +2066,27 @@ function takeLoan(p,need){
   log(`${nm(p)} pide un préstamo de ${fmt(L.amt)} al banco. Deuda total: ${fmt(G.imp.debt)}`,'pay','bank');Snd.cash();render();return true;
 }
 function impRepay(p,max){const r=Math.min(G.imp.debt,max,p.money);if(r<=0)return;addMoney(p,-r);G.imp.debt-=r;log(`${nm(p)} devuelve ${fmt(r)} del préstamo`,'pay','bank');Snd.pay()}
+function openBank(p){
+  const m=modal({title:'Banco',cls:'wide',closable:true,help:'prestamos',onClose:render});
+  const draw=()=>{
+    const rate=hasBiz('bufete')?5:10,room=debtLimit()-G.imp.debt,max=Math.max(0,Math.floor(room/(1+rate/100)/50)*50);
+    const opts=[100,250,500,1000,2000].filter(a=>a<=max);if(max>0&&!opts.includes(max))opts.push(max);
+    const back=a=>fmt(Math.round(a*(1+rate/100)));
+    m.body.innerHTML=`<div class="bankhead">${ic('bank')}<div><small>Director del banco</small><b>Buenas, ${esc(p.name)}. ¿En qué puedo ayudarte?</b></div></div>
+      <div class="kv"><span>Tu dinero</span><b>${fmt(p.money)}</b></div>
+      <div class="kv"><span>Lo que debes al banco</span><b style="color:${G.imp.debt?'var(--bad)':'var(--good)'}">${fmt(G.imp.debt)}</b></div>
+      <div class="kv"><span>Te puedo prestar hasta</span><b>${fmt(max)}</b></div>
+      <div class="kv"><span>Interés</span><b>${rate} % del préstamo, una sola vez</b></div>
+      <div class="fl" style="margin-top:16px">Pedir un préstamo</div>
+      ${max>0?`<div class="loanbtns">${opts.map(a=>`<button class="btn" type="button" data-l="${a}"><b>${a===max&&![100,250,500,1000,2000].includes(a)?'Máximo · ':''}${fmt(a)}</b><small>Devuelves ${back(a)}</small></button>`).join('')}</div>`:'<p class="note">Has llegado al límite. Devuelve parte de la deuda y podrás volver a pedir.</p>'}
+      <div class="fl" style="margin-top:16px">Devolver</div>
+      <div class="loanbtns"><button class="btn" type="button" data-r="100" ${!G.imp.debt||p.money<1?'disabled':''}><b>100 €</b></button><button class="btn" type="button" data-r="500" ${!G.imp.debt||p.money<1?'disabled':''}><b>500 €</b></button><button class="btn pri" type="button" data-r="all" ${!G.imp.debt||p.money<1?'disabled':''}><b>Todo lo que pueda</b></button></div>
+      <p class="note" style="margin-top:12px">Usa el dinero para lo que quieras: comprar en subastas, construir casas o aguantar una mala racha. Cada vez que pasas por la SALIDA devuelves sola la mitad de lo que cobras.${zoneOf(G.imp.zi).star.t==='noloan'?' <b>Ojo:</b> en esta zona, pedir un préstamo te quita la estrella «sin préstamos».':''}</p>`;
+    m.body.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{if(takeLoan(p,+b.dataset.l)){vib(15);draw()}});
+    m.body.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{impRepay(p,b.dataset.r==='all'?1e9:+b.dataset.r);render();draw()});
+  };
+  draw();m.btn('Listo','pri',()=>m.close());
+}
 function impManageHTML(p){
   if(!G.imp.debt)return '';
   return `<div class="mrow"><div class="nm2">Préstamo del banco<small>Deuda pendiente: ${fmt(G.imp.debt)} · límite ${fmt(debtLimit())}. Al pasar por la SALIDA devuelves la mitad de lo que cobras.</small></div><div class="bt"><button class="btn sm" data-a="r100" data-i="0" ${p.money<1?'disabled':''}>Devolver 100 €</button><button class="btn sm pri" data-a="rall" data-i="0" ${p.money<1?'disabled':''}>Devolver todo</button></div></div>`;
@@ -2108,7 +2146,7 @@ function addXP(n){
 function newImperioGame(zi){
   const z=zoneOf(zi),tier=tierOf(zi),lv=zi%ZONES.length;
   applyZone(z);
-  const g=newGame(PROF.name||'Tú',PROF.token||'hat','imperio');
+  const g=newGame(PROF.name||'Marcel',PROF.token||'hat','imperio');
   g.imp={zi,zid:z.id,tier,power:z.boss.power,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0};
   g.track={rentIn:0,buys:0,builds:0,streets:{}};
   const boss=g.players[1];boss.name=z.boss.name;boss.boss=true;boss.pers=makePers(['agresivo','constructor','equilibrado'][lv%3]);
@@ -2314,7 +2352,7 @@ function humanAction(p,mode){
     const add=(label,c,fn,title)=>{const b=el('button','btn '+c,label);b.type='button';if(title){b.title=title;b.setAttribute('aria-label',title)}b.onclick=fn;acts.appendChild(b);return b};
     const done=v=>{acts.innerHTML='';res(v)};
     const props=()=>add(ic('deed'),'sq2',()=>openManage(p),'Tus propiedades');
-    const trade=()=>add(ic('swap'),'sq2',()=>openTrade(p),'Negociar');
+    const trade=()=>{add(ic('swap'),'sq2',()=>openTrade(p),'Negociar');if(isImp())add(ic('bank'),'sq2',()=>openBank(p),'Hablar con el banco')};
     if(mode==='roll'){props();add(ic('dice')+(G.doublesNow?'Tirar otra vez':'Tirar dados'),'pri pulse',()=>done('roll'));trade();say(G.doublesNow?'Has sacado dobles: vuelve a tirar.':'Te toca. Antes de tirar puedes gestionar tus propiedades o negociar.')}
     if(mode==='end'){props();add(ic('check')+'Terminar turno','pri',()=>done('end'));trade();say('Puedes construir, hipotecar o negociar antes de terminar tu turno.')}
     if(mode==='jail'){
@@ -2465,7 +2503,7 @@ const HELP={
   hipoteca:['Hipotecas',`<ul><li>Hipotecar te da la mitad del precio de la propiedad al momento.</li><li>Mientras está hipotecada no cobras alquiler por ella.</li><li>Para levantar la hipoteca pagas esa mitad <b>más un 10 %</b>.</li><li>No puedes hipotecar una calle si su grupo tiene edificios: véndelos antes.</li><li>Si recibes una propiedad hipotecada en un trato, pagas el 10 % al momento o levantas la hipoteca entera.</li></ul>`],
   carcel:['La cárcel',`<p>Vas a la cárcel si caes en «Vaya a la cárcel», si te sale esa carta o si sacas dobles tres veces seguidas.</p><p>Para salir puedes:</p><ul><li><b>Pagar 50 €</b> y tirar normalmente.</li><li><b>Usar la carta</b> «Libre de la cárcel».</li><li><b>Intentar sacar dobles</b>: si lo consigues, sales y avanzas. Tienes 3 intentos; al tercer fallo pagas 50 € y avanzas lo que hayas sacado.</li></ul><p>Desde la cárcel sigues cobrando alquileres, construyendo y negociando. Si solo caes en la casilla, estás «de visita».</p>`],
   cartas:['Cartas',`<p>Hay 16 cartas de <b>Suerte</b> y 16 de <b>Caja de Comunidad</b>, como en el juego clásico. Se barajan al empezar y, cuando se usan, vuelven al fondo del mazo.</p><p>La carta «Libre de la cárcel» te la guardas hasta usarla o venderla. Mientras la tienes, no está en el mazo.</p>`],
-  negociar:['Negociar',`<p>Puedes intercambiar propiedades, dinero y cartas «Libre de la cárcel» con cualquier rival, en cualquier momento de tu turno.</p><ul><li>No se pueden negociar calles de un grupo con edificios: hay que venderlos antes.</li><li>Cada rival valora el trato a su manera. Si no le convence, a veces te dirá cuánto dinero más quiere.</li><li>Los rivales también te harán ofertas, sobre todo cuando les falta una calle para completar un grupo.</li></ul>`],
+  negociar:['Negociar',`<p>Puedes intercambiar propiedades, dinero y cartas «Libre de la cárcel» con cualquier rival, en cualquier momento de tu turno.</p><ul><li>No se pueden negociar calles de un grupo con edificios: hay que venderlos antes.</li><li>Cada rival valora el trato a su manera. Si no le convence, a veces te dirá cuánto dinero más quiere.</li><li>Cuando un rival te proponga un trato puedes aceptarlo, rechazarlo o hacerle una <b>contraoferta</b>: se abre su propuesta para que la cambies como quieras y se la vuelvas a proponer.</li><li>Los rivales también te harán ofertas, sobre todo cuando les falta una calle para completar un grupo.</li></ul>`],
   quiebra:['Deudas y quiebra',`<p>Si tienes que pagar y no te llega el efectivo, puedes vender edificios, hipotecar o negociar para conseguirlo.</p><p>Si ni así llegas, quiebras: quedas fuera de la partida. Si debías a otro jugador, se queda todo lo tuyo. Si debías al banco, tus propiedades se subastan.</p>`],
   jugadores:['Jugadores',`<p>Cada fila muestra el dinero en efectivo, cuántas propiedades, grupos completos, casas y hoteles tiene cada jugador. Los cuadraditos de color son sus propiedades; los apagados están hipotecados y los marcados con borde dorado tienen edificios.</p><p>Las etiquetas indican si alguien está en la cárcel o guarda cartas «Libre de la cárcel». Tus rivales tienen un estilo de juego secreto, distinto en cada partida.</p>`],
   banco:['El banco',`<ul><li><b>Propiedades</b>: cuántas siguen sin dueño de las 28 del tablero.</li><li><b>Casas y hoteles</b>: cuántos quedan para construir. Cuando se agotan, nadie puede construir.</li><li><b>Hipotecadas</b>: propiedades hipotecadas por cualquier jugador.</li><li><b>Cartas de libertad</b>: cuántas «Libre de la cárcel» siguen en los mazos.</li></ul>`],
@@ -2484,6 +2522,7 @@ function openHelp(key='basico'){
 }
 
 Object.assign(HELP,{
+  prestamos:['El banco',`<p>En Imperio puedes <b>hablar con el banco</b> cuando quieras durante tu turno, con el botón del edificio de columnas en la barra de abajo.</p><ul><li><b>Pedir un préstamo</b>: recibes el dinero al momento y debes ese dinero más un 10 % de interés (5 % si tienes el Bufete de abogados).</li><li><b>Límite</b>: el banco te presta hasta cierta cantidad según la zona. Si ya debes mucho, tendrás que devolver antes de volver a pedir.</li><li><b>Devolver</b>: cuando quieras, desde el banco o desde tus propiedades. Además, al pasar por la SALIDA devuelves sola la mitad de lo que cobras.</li><li>Si te quedas sin dinero para pagar algo, el banco también te ofrece un préstamo en ese momento.</li></ul>`],
   imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas zonas una a una: tres barrios de Barcelona y después Madrid, València, Sevilla, París, Londres, Nueva York y Tokio. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
   mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
   golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival. Si te pillan, <b>pierdes todo el botín del turno</b>. Si es la calle de un rival, además le pagas el alquiler entero; si no te llega, tendrás que hipotecar o vender, y si ni así puedes, quiebras.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> como en una partida normal, la partida sigue hasta que todos los rivales han quebrado. Completa grupos, construye casas y hoteles, y haz que caer en tus calles les salga muy caro. También puedes negociar como en el modo clásico.</p>`],
