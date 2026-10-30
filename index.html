@@ -518,8 +518,8 @@ html[data-dice="negro"]{--die-a:#3f474f;--die-b:#16191d;--pip-c:#f3cb7b}
 .hub-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .hub-title small{display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:800}
 .hub-title b{display:block;font-family:var(--f-display);font-weight:800;font-size:36px;letter-spacing:-.04em;line-height:1}
-.hub-stats{margin-left:auto;display:flex;gap:8px}
-.hstat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;min-width:120px}
+.hub-stats{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.hstat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;min-width:110px;flex:1}
 .hstat small{display:block;font-size:10.5px;color:var(--muted);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .hstat b{font-family:var(--f-display);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
 .xpbar{height:6px;border-radius:6px;background:var(--surface-3);margin-top:5px;overflow:hidden}.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--brass),var(--brass-hi))}
@@ -1958,7 +1958,7 @@ function fixCard(card){
 
 /* =================== Imperio: perfil y progreso =================== */
 const PROF_KEY='magnate-imperio-v1';
-function defProfile(){return{v:1,name:'',token:'hat',level:1,xp:0,points:0,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
+function defProfile(){return{v:1,name:'',token:'hat',level:1,xp:0,points:0,fortune:1500,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
   daily:{last:'',streak:0,max:0},stats:{played:0,wins:0,modes:{clasico:{p:0,w:0},golpe:{p:0,w:0},imperio:{p:0,w:0}},rentIn:0,bestNW:0,bosses:0,streets:{}},look:{theme:'noche',dice:'clasico'}}}
 function loadProf(){
   try{const s=JSON.parse(kvGet(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
@@ -1973,6 +1973,8 @@ const hasBiz=id=>!!PROF.biz[id];
 const zoneOf=zi=>ZONES[zi%ZONES.length];
 const tierOf=zi=>Math.floor(zi/ZONES.length);
 const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const fortune=()=>Math.max(1200,PROF.fortune||1500);
+const rivalMoney=(zi,boss)=>1500+250*(zi%ZONES.length)+300*tierOf(zi)+(boss?400:0);
 const tierName=t=>t?`Temporada élite ${ROMAN[t]||t}`:'Primera temporada';
 function zoneState(zi){return PROF.zones[zi]||(PROF.zones[zi]={stars:[false,false,false],lives:3,wins:0,tries:0})}
 const SKILLS={
@@ -2147,12 +2149,12 @@ function newImperioGame(zi){
   const z=zoneOf(zi),tier=tierOf(zi),lv=zi%ZONES.length;
   applyZone(z);
   const g=newGame(PROF.name||'Marcel',PROF.token||'hat','imperio');
-  g.imp={zi,zid:z.id,tier,power:z.boss.power,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0};
+  g.imp={start:fortune()+(hasBiz('naviera')?300:0),zi,zid:z.id,tier,power:z.boss.power,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0};
   g.track={rentIn:0,buys:0,builds:0,streets:{}};
   const boss=g.players[1];boss.name=z.boss.name;boss.boss=true;boss.pers=makePers(['agresivo','constructor','equilibrado'][lv%3]);
   g.players.forEach(p=>{
-    if(p.bot)p.money=1500+150*lv+300*tier+(p.boss?400:0);
-    else p.money=1500+Math.min(800,Math.round(PROF.capital*.05/10)*10)+(hasBiz('naviera')?300:0);
+    if(p.bot)p.money=rivalMoney(zi,p.boss);
+    else p.money=fortune()+(hasBiz('naviera')?300:0);
   });
   if(z.boss.power.t==='cash')boss.money+=z.boss.power.v;
   if(z.boss.power.t==='props'){
@@ -2182,6 +2184,10 @@ function impFinish(win){
   const xp=(win?250:70)+80*newStars+6*(t.buys||0)+10*(t.builds||0)+Math.floor((t.rentIn||0)/25);
   const nw=Math.max(netWorth(h),(G.track&&G.track.maxNW)||0),cap=Math.max(win?100:50,Math.round((win?nw*.25:nw*.08)/10)*10);
   let lifeMsg='',lostCap=0;
+  const replay=zi<PROF.progress,F0=fortune(),startM=G.imp.start||F0;let F1;
+  if(win){let gain=Math.round(Math.max(0,netWorth(h)-startM)*.25/10)*10+100*newStars;gain=Math.min(1500,Math.max(100,gain));if(replay)gain=Math.max(50,Math.round(gain/2/10)*10);F1=F0+gain}
+  else F1=Math.max(1200,Math.round(F0*.9/10)*10);
+  PROF.fortune=F1;
   if(win){zs.wins++;PROF.stats.bosses++;if(zi===PROF.progress)PROF.progress++;if(!G.imp.loanUsed)PROF.ach.sinprestamos=PROF.ach.sinprestamos||Date.now()}
   else{zs.lives--;if(zs.lives<=0){zs.lives=3;lostCap=Math.round(PROF.capital*.25/10)*10;PROF.capital-=lostCap;lifeMsg=`Has perdido las 3 vidas de la zona: el banco se queda con ${fmt(lostCap)} de tu capital y las vidas se recargan.`}else lifeMsg=`Pierdes una vida. Te quedan ${zs.lives} en esta zona.`}
   PROF.capital+=cap;
@@ -2196,6 +2202,7 @@ function impFinish(win){
     <div class="fl" style="margin-top:16px">Estrellas</div>${starRow}
     <div class="fl" style="margin-top:16px">Recompensas</div>
     <div class="kv"><span>Experiencia</span><b>+${xp} XP${ups?` · ¡Subes al nivel ${PROF.level}!`:''}</b></div>
+    <div class="kv"><span>Tu fortuna para la próxima partida</span><b style="color:${F1>=F0?'var(--good)':'var(--bad)'}">${fmt(F0)} → ${fmt(F1)}</b></div>${replay&&win?'<p class="note">Zona repetida: la fortuna crece la mitad.</p>':''}
     <div class="kv"><span>Capital</span><b>+${fmt(cap)}${lostCap?` · −${fmt(lostCap)}`:''}</b></div>
     ${achs.length?`<div class="kv"><span>Logros nuevos</span><b>${achs.map(a=>a.n).join(', ')}</b></div>`:''}
     ${ups?`<p class="note" style="margin-top:12px">Tienes <b>${PROF.points}</b> ${PROF.points===1?'punto':'puntos'} para gastar en el árbol de mejoras.</p>`:''}`});
@@ -2233,7 +2240,8 @@ function openHub(){
       <div class="hub-title"><small>Modo campaña</small><b>Imperio</b></div>
       <div class="hub-stats">
         <div class="hstat"><small>Nivel ${PROF.level}</small><b>${PROF.xp}<span class="note"> / ${nextXP} XP</span></b><div class="xpbar"><i style="width:${PROF.xp/nextXP*100}%"></i></div></div>
-        <div class="hstat"><small>Capital</small><b class="gold">${fmt(PROF.capital)}</b></div>
+        <div class="hstat"><small>Fortuna inicial</small><b class="gold">${fmt(fortune())}</b></div>
+        <div class="hstat"><small>Capital</small><b>${fmt(PROF.capital)}</b></div>
       </div>
     </div>
     ${dailyReady()?`<button type="button" class="daily" id="hubDaily">${ic('gift')}<span><b>Recompensa diaria disponible</b><small>Racha actual: ${PROF.daily.last===yesterday()?PROF.daily.streak:0} días. Tócala para reclamarla.</small></span></button>`:''}
@@ -2259,7 +2267,7 @@ function openHub(){
 }
 function zoneIntro(zi){
   const z=zoneOf(zi),tier=tierOf(zi),zs=zoneState(zi),lv=zi%ZONES.length;
-  const startMoney=1500+Math.min(800,Math.round(PROF.capital*.05/10)*10)+(hasBiz('naviera')?300:0);
+  const startMoney=fortune()+(hasBiz('naviera')?300:0);
   const bossC=SEAT_COLORS[1];
   const m=modal({title:`${esc(z.name)}${tier?` · ${tierName(tier)}`:''}`,cls:'wide',closable:true,help:'imperio',html:`
     <div class="bosscard">${disc({color:bossC,token:'crown'},'xl')}<div><small>Jefe de zona</small><b>${esc(z.boss.name)}</b><p class="note">${z.boss.d}</p></div></div>
@@ -2267,7 +2275,8 @@ function zoneIntro(zi){
     ${['Derrota al jefe (que quiebre)','Hazlo en 30 rondas o menos',z.star.d].map((d,k)=>`<div class="kv"><span>${ic(zs.stars[k]?'starF':'star','st'+(zs.stars[k]?' on':''))} ${d}</span><b>${zs.stars[k]?'Conseguida':''}</b></div>`).join('')}
     <div class="fl" style="margin-top:16px">Tu partida</div>
     <div class="kv"><span>Dinero inicial</span><b>${fmt(startMoney)}</b></div>
-    <div class="kv"><span>Rivales</span><b>${fmt(1500+150*lv+300*tier)} cada uno · el jefe, más</b></div>
+    <div class="kv"><span>Rivales</span><b>${fmt(rivalMoney(zi,false))} cada uno · el jefe, ${fmt(rivalMoney(zi,true)+(z.boss.power.t==='cash'?z.boss.power.v:0))}</b></div>
+    <p class="note" style="margin-top:8px">Tu dinero inicial es tu <b>fortuna</b>: crece cuando ganas jugando bien y baja un poco si pierdes.</p>
     <div class="kv"><span>Vidas en esta zona</span><b><span class="lives">${[0,1,2].map(k=>ic(k<zs.lives?'heartF':'heart','lv'+(k<zs.lives?' on':''))).join('')}</span></b></div>
     <p class="note" style="margin-top:12px">Si te quedas sin dinero, el banco te presta hasta ${fmt(Math.round((3000+300*lv+500*tier)*(hasBiz('banco')?1.5:1)))}. Solo pierdes si superas ese límite. Cada 6 rondas llega un evento de temporada que cambia las reglas.</p>`});
   m.btn('Volver','',()=>m.close());
@@ -2523,7 +2532,7 @@ function openHelp(key='basico'){
 
 Object.assign(HELP,{
   prestamos:['El banco',`<p>En Imperio puedes <b>hablar con el banco</b> cuando quieras durante tu turno, con el botón del edificio de columnas en la barra de abajo.</p><ul><li><b>Pedir un préstamo</b>: recibes el dinero al momento y debes ese dinero más un 10 % de interés (5 % si tienes el Bufete de abogados).</li><li><b>Límite</b>: el banco te presta hasta cierta cantidad según la zona. Si ya debes mucho, tendrás que devolver antes de volver a pedir.</li><li><b>Devolver</b>: cuando quieras, desde el banco o desde tus propiedades. Además, al pasar por la SALIDA devuelves sola la mitad de lo que cobras.</li><li>Si te quedas sin dinero para pagar algo, el banco también te ofrece un préstamo en ese momento.</li></ul>`],
-  imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas zonas una a una: tres barrios de Barcelona y después Madrid, València, Sevilla, París, Londres, Nueva York y Tokio. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
+  imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas zonas una a una: tres barrios de Barcelona y después Madrid, València, Sevilla, París, Londres, Nueva York y Tokio. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p><b>Tu fortuna</b> es el dinero con el que empiezas cada partida (al principio, 1.500 €). Si ganas una zona, crece un 25 % de lo que hayas hecho crecer tu patrimonio en la partida, más 100 € por cada estrella nueva (como mínimo 100 € y como máximo 1.500 € por partida; la mitad si repites una zona ya ganada). Si pierdes, baja un 10 %, pero nunca de 1.200 €. Los rivales empiezan con 1.500 € en la primera zona y 250 € más en cada zona siguiente.</p><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
   mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
   golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival. Si te pillan, <b>pierdes todo el botín del turno</b>. Si es la calle de un rival, además le pagas el alquiler entero; si no te llega, tendrás que hipotecar o vender, y si ni así puedes, quiebras.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> como en una partida normal, la partida sigue hasta que todos los rivales han quebrado. Completa grupos, construye casas y hoteles, y haz que caer en tus calles les salga muy caro. También puedes negociar como en el modo clásico.</p>`],
   camara:['La cámara',`<p>La cámara sigue al jugador que tiene el turno para que veas bien cada casilla.</p><ul><li><b>Seguir</b> (botón de la diana): acerca la vista y acompaña a la ficha que se mueve.</li><li><b>Tablero</b> (botón de la cuadrícula): muestra el tablero entero.</li><li>En el móvil puedes <b>pellizcar</b> para acercar o alejar y <b>arrastrar</b> para moverte. En el ordenador, usa la rueda del ratón y arrastra.</li><li>Doble toque: acerca la vista o vuelve al tablero entero.</li></ul><p>Si mueves la vista a mano, al empezar el siguiente turno vuelve al modo que elegiste.</p>`],
@@ -2784,7 +2793,7 @@ function renderHome(){
   $('#tiles').innerHTML=
     tile('clasico','Partida completa','Clásico','Compra, construye y lleva a la quiebra a tus tres rivales.',`<span>Ganadas: ${PROF.stats.modes.clasico.w}</span>`,sc&&liveTxt(sc),sc?two('clasico'):one('clasico','Jugar'))+
     tile('golpe','Partida rápida','El Golpe','Tira cuanto quieras y plántate antes de que te pillen.',`<span>Ganadas: ${PROF.stats.modes.golpe.w}</span>`,sg&&liveTxt(sg),sg?two('golpe'):one('golpe','Jugar'))+
-    tile('imperio','Campaña','Imperio','Conquista barrios y ciudades. Sube de nivel y mejora.',`<span>Nivel ${PROF.level}</span><span>${zonesDone} zonas</span><span>${fmt(PROF.capital)}</span>`,si&&si.imp&&`${esc(zoneOf(si.imp.zi).name)} · ronda ${si.round}`,
+    tile('imperio','Campaña','Imperio','Conquista barrios y ciudades. Sube de nivel y mejora.',`<span>Nivel ${PROF.level}</span><span>${zonesDone} zonas</span><span>Fortuna ${fmt(fortune())}</span>`,si&&si.imp&&`${esc(zoneOf(si.imp.zi).name)} · ronda ${si.round}`,
       si&&si.imp?`<button class="btn white" type="button" data-act="cont" data-m="imperio">${ic('play')}Continuar</button><button class="btn glass" type="button" data-act="map">Mapa</button>`:`<button class="btn white" type="button" data-act="map">${ic('play')}Abrir campaña</button>`,
       dailyReady()?`<span class="t-badge">${ic('gift')}Regalo diario</span>`:'');
   $('#tiles').querySelectorAll('[data-act]').forEach(b=>b.onclick=e=>{e.stopPropagation();homeAction(b.dataset.act,b.dataset.m)});
