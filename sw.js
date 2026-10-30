@@ -1,5 +1,7 @@
 // Guarda la app para que funcione sin conexión. Cambia VERSION al publicar una actualización.
-const VERSION = 'magnate-v8-golpe-sin-fin';
+// La caché «magnate-datos» guarda una copia de tu progreso y nunca se borra.
+const VERSION = 'magnate-v9-guardado';
+const DATA = 'magnate-datos';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -7,17 +9,34 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== DATA).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
 });
 
-// Red primero para la página (así llegan las actualizaciones) y caché si no hay conexión.
+// Página: intenta la red (máx. 4 s) para recibir actualizaciones; si no hay conexión,
+// la red tarda o devuelve otra cosa (wifi de aeropuerto), usa la copia guardada.
+async function page(req) {
+  const cache = await caches.open(VERSION);
+  const cached = await cache.match('./index.html');
+  try {
+    const r = await Promise.race([fetch(req), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 4000))]);
+    if (r && r.ok && r.type === 'basic') {
+      const text = await r.clone().text();
+      if (text.includes('<title>Magnate')) { await cache.put('./index.html', r.clone()); return r; }
+    }
+    if (cached) return cached;
+    return r;
+  } catch (err) {
+    if (cached) return cached;
+    return new Response('<h1>Sin conexión</h1><p>Abre Magnate una vez con internet para poder usarla sin conexión.</p>', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  }
+}
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  const isPage = e.request.mode === 'navigate';
-  e.respondWith(
-    isPage
-      ? fetch(e.request).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', copy)); return r; })
-          .catch(() => caches.match('./index.html'))
-      : caches.match(e.request).then(hit => hit || fetch(e.request))
-  );
+  const url = new URL(e.request.url);
+  if (url.pathname.includes('/__datos/')) return;
+  if (e.request.mode === 'navigate') { e.respondWith(page(e.request)); return; }
+  e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request)));
 });

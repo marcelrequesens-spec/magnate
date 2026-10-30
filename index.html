@@ -680,6 +680,7 @@ html:not(.wide) #dock:has(#loot:not([hidden])) #tabs{display:none}
       <button class="pchip" id="hProfile" type="button" aria-label="Tu perfil"></button>
       <button class="iconbtn" id="hSettings" type="button" aria-label="Ajustes"><svg class="ic"><use href="#i-gear"/></svg></button>
     </header>
+    <div id="stWarnBox"></div>
     <div class="tiles" id="tiles"></div>
     <div class="home-foot"><button id="bInstall2" class="btn ghost" type="button"><svg class="ic"><use href="#i-phone"/></svg>Instalar en el móvil</button></div>
   </div>
@@ -791,10 +792,24 @@ const fmt=n=>`${Math.round(n).toLocaleString('es-ES',{useGrouping:true})} €`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SAVE_KEY='magnate-bcn-save-v2',CFG_KEY='magnate-bcn-cfg-v2';
 const SPEEDS=[{v:2.4,l:'Muy lento'},{v:1.6,l:'Lento'},{v:1,l:'Normal'},{v:.5,l:'Rápido'}];
+/* =================== guardado triple: localStorage + IndexedDB + Cache =================== */
+const MEM={};let HYDRATED=false;
+function kvGet(k){try{const v=localStorage.getItem(k);if(v!=null)return v}catch(e){}return MEM[k]??null}
+let _idb=null;
+function idbOpen(){if(_idb)return _idb;_idb=new Promise(res=>{try{const r=indexedDB.open('magnate',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}});return _idb}
+async function idbGet(k){const db=await idbOpen();if(!db)return null;return new Promise(res=>{try{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+async function idbSet(k,v){const db=await idbOpen();if(!db)return false;return new Promise(res=>{try{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})}
+const cacheUrl=k=>new URL('__datos/'+encodeURIComponent(k),location.href).href;
+async function cacheGet(k){try{if(!window.caches)return null;const c=await caches.open('magnate-datos');const r=await c.match(cacheUrl(k));return r?await r.text():null}catch(e){return null}}
+async function cacheSet(k,v){try{if(!window.caches)return;const c=await caches.open('magnate-datos');if(v==null)await c.delete(cacheUrl(k));else await c.put(cacheUrl(k),new Response(v,{headers:{'content-type':'application/json'}}))}catch(e){}}
+let LAST_SAVE=0;
+function kvSet(k,v){MEM[k]=v;try{localStorage.setItem(k,v)}catch(e){}if(HYDRATED){idbSet(k,v);cacheSet(k,v)}LAST_SAVE=Date.now()}
+function kvDel(k){delete MEM[k];try{localStorage.removeItem(k)}catch(e){}if(HYDRATED){idbSet(k,null);cacheSet(k,null)}}
+const tsOf=v=>{try{return JSON.parse(v)._ts||0}catch(e){return 0}};
 let CFG={speed:1.6,sound:true,cam:''};
-try{Object.assign(CFG,JSON.parse(localStorage.getItem(CFG_KEY)||'{}'))}catch(e){}
+try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}
 if(!SPEEDS.some(s=>s.v===CFG.speed))CFG.speed=1.6;
-const saveCfg=()=>{try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG))}catch(e){}};
+const saveCfg=()=>{CFG._ts=Date.now();kvSet(CFG_KEY,JSON.stringify(CFG))};
 let RUN=0,PAUSED=false;
 const sleep=ms=>{const r=RUN;return new Promise(res=>{const go=()=>{if(r!==RUN)return;if(PAUSED){setTimeout(go,150);return}res()};setTimeout(go,ms*CFG.speed)})};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -950,9 +965,9 @@ function newGame(name,token,mode){
   return g;
 }
 const saveKey=m=>SAVE_KEY+'-'+(m||'clasico');
-function save(){try{if(G&&!G.over&&G.started)localStorage.setItem(saveKey(G.mode),JSON.stringify(G))}catch(e){}}
-function loadSave(m){try{const s=localStorage.getItem(saveKey(m));const g=s?JSON.parse(s):null;return g&&g.v===2&&(g.mode||'clasico')===(m||'clasico')?g:null}catch(e){return null}}
-function clearSave(m){try{localStorage.removeItem(saveKey(m||(G&&G.mode)))}catch(e){}}
+function save(){try{if(G&&!G.over&&G.started){G._ts=Date.now();kvSet(saveKey(G.mode),JSON.stringify(G))}}catch(e){}}
+function loadSave(m){try{const s=kvGet(saveKey(m));const g=s?JSON.parse(s):null;return g&&g.v===2&&(g.mode||'clasico')===(m||'clasico')?g:null}catch(e){return null}}
+function clearSave(m){kvDel(saveKey(m||(G&&G.mode)))}
 (function migrateSave(){try{const s=localStorage.getItem(SAVE_KEY);if(!s)return;const g=JSON.parse(s);if(g&&g.v===2&&!localStorage.getItem(saveKey(g.mode)))localStorage.setItem(saveKey(g.mode),s);localStorage.removeItem(SAVE_KEY)}catch(e){}})();
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
 
@@ -1929,11 +1944,11 @@ const PROF_KEY='magnate-imperio-v1';
 function defProfile(){return{v:1,name:'',token:'hat',level:1,xp:0,points:0,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
   daily:{last:'',streak:0,max:0},stats:{played:0,wins:0,modes:{clasico:{p:0,w:0},golpe:{p:0,w:0},imperio:{p:0,w:0}},rentIn:0,bestNW:0,bosses:0,streets:{}},look:{theme:'noche',dice:'clasico'}}}
 function loadProf(){
-  try{const s=JSON.parse(localStorage.getItem(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
+  try{const s=JSON.parse(kvGet(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
   return defProfile();
 }
 let PROF=loadProf();
-const saveProf=()=>{try{localStorage.setItem(PROF_KEY,JSON.stringify(PROF))}catch(e){}};
+const saveProf=()=>{if(!HYDRATED)return;PROF._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(PROF))};
 const isImp=()=>!!(G&&G.mode==='imperio'&&G.imp);
 const xpNeed=l=>150+l*100;
 const skill=k=>PROF.skills[k]||0;
@@ -2231,7 +2246,7 @@ function openBackup(){
     <textarea id="bkIn" placeholder="Pega aquí tu código" style="width:100%;height:70px;background:var(--bg);color:var(--ink);border:1px solid var(--line-2);border-radius:12px;padding:10px;font:12px monospace"></textarea>
     <button class="btn pri" type="button" id="bkLoad" style="margin-top:8px">Recuperar</button><p class="note" id="bkMsg" style="margin-top:8px"></p>`});
   m.body.querySelector('#bkCopy').onclick=()=>{const t=m.body.querySelector('#bkOut');try{navigator.clipboard.writeText(code).then(()=>{m.body.querySelector('#bkCopy').textContent='Copiado'},()=>{t.select()})}catch(e){t.select()}};
-  m.body.querySelector('#bkLoad').onclick=()=>{try{const d=JSON.parse(decodeURIComponent(escape(atob(m.body.querySelector('#bkIn').value.trim()))));if(!d.p||d.p.v!==1)throw 0;localStorage.setItem(PROF_KEY,JSON.stringify(d.p));PROF=loadProf();if(d.s)localStorage.setItem(saveKey('imperio'),JSON.stringify(d.s));applyLook();m.body.querySelector('#bkMsg').textContent='Progreso recuperado.';Snd.win()}catch(e){m.body.querySelector('#bkMsg').textContent='Ese código no es válido. Cópialo entero e inténtalo otra vez.'}};
+  m.body.querySelector('#bkLoad').onclick=()=>{try{const d=JSON.parse(decodeURIComponent(escape(atob(m.body.querySelector('#bkIn').value.trim()))));if(!d.p||d.p.v!==1)throw 0;d.p._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(d.p));PROF=loadProf();if(d.s)kvSet(saveKey('imperio'),JSON.stringify(d.s));applyLook();m.body.querySelector('#bkMsg').textContent='Progreso recuperado.';Snd.win()}catch(e){m.body.querySelector('#bkMsg').textContent='Ese código no es válido. Cópialo entero e inténtalo otra vez.'}};
   m.btn('Listo','pri',()=>m.close());
 }
 function openSkills(){
@@ -2591,6 +2606,7 @@ function openMenu(){
       <div><span class="fl">Cámara</span><div class="seg"><button type="button" data-cam="follow" class="${CAM.pref==='follow'?'on':''}">Seguir al jugador</button><button type="button" data-cam="overview" class="${CAM.pref==='overview'?'on':''}">Tablero entero</button></div></div>
       <button class="mitem" type="button" data-m="sound">${ic(CFG.sound?'sound':'mute')}<span>Sonido<small>${CFG.sound?'Activado':'Desactivado'}</small></span></button>
       ${isStandalone()?'':`<button class="mitem" type="button" data-m="install">${ic('phone')}<span>Instalar en el móvil<small>Icono propio, pantalla completa y sin conexión</small></span></button>`}
+      <button class="mitem" type="button" data-m="data">${ic('check')}<span>Tus datos guardados<small>Comprueba que se guarda todo y haz una copia</small></span></button>
       <button class="mitem" type="button" data-m="help">${ic('book')}<span>Ayuda y reglas<small>Cómo se juega, paso a paso</small></span></button>
       ${G?`<button class="mitem" type="button" data-m="exit">${ic('exit')}<span>Salir al menú<small>La partida queda guardada como «En curso»</small></span></button><button class="mitem danger" type="button" data-m="quit">${ic('x')}<span>Abandonar partida<small>Se borra y no se puede continuar</small></span></button>`:''}
     </div>`;
@@ -2600,6 +2616,7 @@ function openMenu(){
       if(k==='sound'){CFG.sound=!CFG.sound;saveCfg();updSound();draw()}
       if(k==='install')openInstall();
       if(k==='help')openHelp('basico');
+      if(k==='data'){m.close();openData()}
       if(k==='exit'){m.close();askExit()}
       if(k==='quit'){m.close();askQuit()}
     });
@@ -2607,6 +2624,62 @@ function openMenu(){
   draw();
 }
 
+/* =================== datos guardados =================== */
+const KEYS=()=>[PROF_KEY,CFG_KEY,saveKey('clasico'),saveKey('golpe'),saveKey('imperio')];
+async function hydrate(){
+  let changed=false;
+  for(const k of KEYS()){
+    const cur=kvGet(k),a=await idbGet(k),b=await cacheGet(k);
+    const c=[cur,a,b].filter(v=>typeof v==='string'&&v);
+    if(!c.length)continue;
+    const best=c.reduce((x,y)=>tsOf(y)>tsOf(x)?y:x);
+    if(best!==cur){MEM[k]=best;try{localStorage.setItem(k,best)}catch(e){}changed=true}
+    if(a!==best)idbSet(k,best);if(b!==best)cacheSet(k,best);
+  }
+  HYDRATED=true;
+  return changed;
+}
+let HEALTH={ls:false,idb:false,cache:false,persist:null};
+async function storageHealth(){
+  const h={ls:false,idb:false,cache:false,persist:null};
+  try{localStorage.setItem('__magnate_t','1');h.ls=localStorage.getItem('__magnate_t')==='1';localStorage.removeItem('__magnate_t')}catch(e){}
+  h.idb=!!(await idbOpen())&&await idbSet('__t',1);
+  try{if(window.caches){await caches.open('magnate-datos');h.cache=true}}catch(e){}
+  try{if(navigator.storage&&navigator.storage.persist){h.persist=await navigator.storage.persisted();if(!h.persist)h.persist=await navigator.storage.persist()}}catch(e){}
+  HEALTH=h;return h;
+}
+const storageOk=()=>HEALTH.ls||HEALTH.idb;
+async function exportData(){
+  const data={app:'magnate',v:1,at:Date.now(),keys:{}};
+  for(const k of KEYS()){const v=kvGet(k);if(v)data.keys[k]=v}
+  const txt=JSON.stringify(data),name=`magnate-copia-${new Date().toISOString().slice(0,10)}.json`;
+  const file=new File([txt],name,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Copia de Magnate'});return true}}catch(e){if(e&&e.name==='AbortError')return false}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true}catch(e){return false}
+}
+function importData(text){
+  const d=JSON.parse(text);if(!d||d.app!=='magnate'||!d.keys)throw new Error('formato');
+  HYDRATED=true;
+  for(const k in d.keys){const v=d.keys[k];let o=null;try{o=JSON.parse(v)}catch(e){}if(o&&typeof o==='object'){o._ts=Date.now();kvSet(k,JSON.stringify(o))}}
+  PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();
+}
+function openData(){
+  const m=modal({title:'Tus datos guardados',cls:'wide',closable:true,onClose:()=>{if(!$('#start').hidden)renderHome()}});
+  const draw=async()=>{
+    const h=await storageHealth();
+    const row=(ok,t,d)=>`<div class="kv"><span>${ic(ok?'check':'x')} ${t}</span><b style="color:${ok?'var(--good)':'var(--bad)'}">${d}</b></div>`;
+    m.body.innerHTML=`<p class="lead">Todo se guarda en este móvil, sin necesidad de internet: tu perfil, la campaña y las partidas en curso. Se guarda por triplicado para que no se pierda.</p>
+    <div style="margin-top:12px">${row(h.ls,'Guardado principal',h.ls?'Funciona':'Bloqueado')}${row(h.idb,'Copia de seguridad interna',h.idb?'Funciona':'Bloqueada')}${row(h.cache,'Segunda copia interna',h.cache?'Funciona':'No disponible')}<div class="kv"><span>${ic('lock')} Protección extra del sistema</span><b style="color:var(--muted)">${h.persist?'Activada':'La decide iOS'}</b></div></div>
+    ${storageOk()?'':`<p class="note" style="margin-top:12px;color:var(--bad)">Tu iPhone no está dejando guardar datos a Magnate. Ve a <b>Ajustes → Apps → Safari</b> y desactiva <b>«Bloquear todas las cookies»</b>. Después cierra Magnate y vuelve a abrirlo.</p>`}
+    <div class="fl" style="margin-top:18px">Copia en un archivo</div>
+    <p class="note">Guarda un archivo con todo tu progreso en Archivos, iCloud o donde quieras. Si algún día se borra la app o cambias de móvil, lo recuperas con un toque.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn pri" type="button" id="dExp">${ic('share')}Guardar copia</button><label class="btn" for="dImp" style="cursor:pointer">${ic('restart')}Recuperar desde archivo</label><input type="file" id="dImp" accept=".json,application/json" hidden></div>
+    <p class="note" id="dMsg" style="margin-top:10px"></p>`;
+    m.body.querySelector('#dExp').onclick=async()=>{const ok=await exportData();m.body.querySelector('#dMsg').textContent=ok?'Copia creada. Guárdala en Archivos o en iCloud.':''};
+    m.body.querySelector('#dImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{importData(r.result);m.body.querySelector('#dMsg').textContent='Progreso recuperado correctamente.';Snd.win()}catch(err){m.body.querySelector('#dMsg').textContent='Ese archivo no es una copia de Magnate.'}};r.readAsText(f)};
+  };
+  draw();m.btn('Listo','pri',()=>m.close());
+}
 /* =================== interfaz general =================== */
 function layout(){
   const w=WIDE.matches;document.documentElement.classList.toggle('wide',w);
@@ -2667,6 +2740,8 @@ function renderHome(){
   const two=(m)=>`<button class="btn white" type="button" data-act="cont" data-m="${m}">${ic('play')}Continuar</button><button class="btn glass" type="button" data-act="new" data-m="${m}">Nueva</button>`;
   const one=(m,l)=>`<button class="btn white" type="button" data-act="new" data-m="${m}">${ic('play')}${l}</button>`;
   const zonesDone=Object.values(PROF.zones).filter(z=>z.wins>0).length;
+  const warn=HYDRATED&&!storageOk()?`<div class="daily" style="border-color:var(--bad);background:linear-gradient(120deg,#3d1d1d,#1d2b38);animation:none" id="stWarn">${ic('x')}<span><b>Tu iPhone no deja guardar el progreso</b><small>Toca aquí para ver cómo arreglarlo.</small></span></div>`:'';
+  $('#stWarnBox').innerHTML=warn;const sw=$('#stWarn');if(sw)sw.onclick=openData;
   $('#tiles').innerHTML=
     tile('clasico','Partida completa','Clásico','Compra, construye y lleva a la quiebra a tus tres rivales.',`<span>Ganadas: ${PROF.stats.modes.clasico.w}</span>`,sc&&liveTxt(sc),sc?two('clasico'):one('clasico','Jugar'))+
     tile('golpe','Partida rápida','El Golpe','Tira cuanto quieras y plántate antes de que te pillen.',`<span>Ganadas: ${PROF.stats.modes.golpe.w}</span>`,sg&&liveTxt(sg),sg?two('golpe'):one('golpe','Jugar'))+
@@ -2728,6 +2803,7 @@ addEventListener('pagehide',()=>{saveProf()});document.addEventListener('visibil
 updSound();updSpeed();updPause();
 buildCubes();setDie($('#d1'),1);setDie($('#d2'),1);
 buildBoard();layout();goStart();
+hydrate().then(async ch=>{if(ch){PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();updSound();updSpeed()}await storageHealth();if(!$('#start').hidden)renderHome();saveProf()});
 </script>
 
 </body>
