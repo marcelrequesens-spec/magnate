@@ -1,5 +1,5 @@
 // Guarda la app para que funcione sin conexión. Cambia VERSION al publicar una actualización.
-const VERSION = 'magnate-v7-inicio';
+const VERSION = 'magnate-v8-golpe-sin-fin';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

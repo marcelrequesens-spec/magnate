@@ -1790,9 +1790,11 @@ async function golpeStep(p,L,d,shielded){
   if(isBust(p,i)){
     if(shielded){log(`${nm(p)} cae en ${ownable(i)?pn(i):'un control policial'}, pero el soplo le salva`,'free','unlock');return 'ok'}
     if(POLICE.includes(i)){log(`${nm(p)} cae en un control policial`,'jail','shield');return 'bust'}
-    const ow=P(G.props[i].owner),rent=Math.min(p.money,rentOf(i,d.total));
-    if(rent){addMoney(p,-rent);addMoney(ow,rent)}
-    log(`${nm(p)} cae en ${pn(i)}, de ${nm(ow)}: le paga ${fmt(rent)} y pierde el botín`,'bad');
+    const ow=P(G.props[i].owner),rent=rentOf(i,d.total);
+    L.props.forEach(j=>{delete G.props[j].pend});L.props=[];renderBoard();
+    log(`${nm(p)} cae en ${pn(i)}, de ${nm(ow)}: pierde el botín y le debe ${fmt(rent)} de alquiler`,'bad');
+    if(!await pay(p,rent,ow,'alquiler de '+sq.name))return 'out';
+    if(!ow.bot)trackStreet(i,rent);
     return 'bust';
   }
   if(ownable(i)){
@@ -1825,7 +1827,6 @@ async function bankLoot(p,L){
   bigBanner(v?`+${fmt(v)}`:'Sin botín',v?`${esc(p.name)} pone a salvo su golpe${L.props.length?` y ${L.props.length} ${L.props.length>1?'calles':'calle'}`:''}`:`${esc(p.name)} se planta`,'#5fd197');
   log(`${nm(p)} se planta y guarda ${fmt(L.cash)}${L.props.length?' y '+L.props.map(pn).join(', '):''}`,'big','lock');
   render();announceGroups(p.id,L.props);
-  if(fullGroups(p.id)>=2)G.golpeWin=p.id;
   await sleep(1500);
 }
 function golpeChoice(p,L){
@@ -1854,6 +1855,7 @@ async function playTurnGolpe(p){
     const d=await rollDice(p),sh=L.shield;L.shield=false;
     const res=await golpeStep(p,L,d,sh);
     renderLoot(L,p);
+    if(res==='out'){L.cash=0;L.props=[];break}
     if(res==='bust'){await bustLoot(p,L);break}
     if(res==='bank'){await bankLoot(p,L);break}
     let go;
@@ -1862,26 +1864,9 @@ async function playTurnGolpe(p){
     if(!go){await bankLoot(p,L);break}
   }
   G.loot=null;renderLoot(null);render();
-  if(!G.golpeWin)await endPhase(p);
+  if(!p.out)await endPhase(p);
 }
-function golpeEnd(){
-  if(G.golpeWin!=null)return P(G.golpeWin);
-  const two=active().find(p=>fullGroups(p.id)>=2);if(two){G.golpeWin=two.id;return two}
-  if(Object.values(G.props).every(s=>s.owner!=null))return active().slice().sort((a,b)=>netWorth(b)-netWorth(a))[0];
-  return null;
-}
-function showWinnerGolpe(w){
-  recordMatch('golpe',!w.bot);
-  Snd.win();vib([40,60,40,60,80]);
-  const list=active().slice().sort((a,b)=>netWorth(b)-netWorth(a));
-  if(list[0]!==w){list.splice(list.indexOf(w),1);list.unshift(w)}
-  const isMe=!w.bot,how=G.golpeWin!=null?`completa ${fullGroups(w.id)} grupos de color`:'tiene el mayor patrimonio cuando ya no quedan calles libres';
-  const rows=list.map((p,k)=>`<div><span class="pos">${k+1}</span>${disc(p)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><small>${p.bot?ARCH[p.pers.arch].d:'Tú'}</small></div><span class="note">${fmt(netWorth(p))}</span></div>`).join('');
-  const m=modal({title:isMe?'¡Golpe perfecto, has ganado!':`Gana ${esc(w.name)}`,html:`<p class="lead">${isMe?'Tú':esc(w.name)} ${how}. La partida ha durado ${G.round} rondas.</p><div class="fl" style="margin-top:16px">Clasificación por patrimonio</div><div class="rank">${rows}</div>`});
-  m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-trophy"/></svg>`);
-  m.btn('Nueva partida','pri',()=>{m.close();goStart()});
-}
-
+function golpeEnd(){return active().length<=1?active()[0]:null}
 /* =================== Imperio: zonas =================== */
 const STREET_IDX=['brown','lightblue','pink','orange','red','yellow','green','darkblue'].flatMap(g=>GROUPS[g].idx);
 const RAIL_IDX=[5,15,25,35];
@@ -2380,11 +2365,11 @@ function nextTurn(){let n=G.turn;do{n=(n+1)%G.players.length;if(n===G.firstTurn)
 async function checkEnd(){
   const act=active();
   if(G.mode==='imperio'){const h=G.players[0],boss=G.players.find(p=>p.boss);if(h.out){G.over=true;clearSave();render();impFinish(false);return true}if((boss&&boss.out)||act.length===1){G.over=true;clearSave();render();impFinish(true);return true}return false}
-  if(G.mode==='golpe'){const w=golpeEnd();if(w){G.over=true;clearSave();render();showWinnerGolpe(w);return true}return false}
+
   if(act.length<=1){G.over=true;clearSave();render();showWinner(act[0]);return true}
   const h=G.players[0];
   if(h.out&&!G.humanOutShown){
-    G.humanOutShown=true;recordMatch('clasico',false);
+    G.humanOutShown=true;recordMatch(G.mode,false);
     const v=await ask('Has quebrado','<p class="lead">Te has quedado sin dinero. Puedes ver cómo terminan la partida tus rivales o empezar una nueva.</p>',[{label:'Nueva partida',v:'new'},{label:'Ver el final',cls:'pri',v:'watch'}]);
     if(v==='new'){clearSave();goStart();return true}
     CFG.speed=.5;updSpeed();
@@ -2392,7 +2377,7 @@ async function checkEnd(){
   return false;
 }
 function showWinner(w){
-  recordMatch('clasico',!!(w&&!w.bot));
+  recordMatch(G.mode,!!(w&&!w.bot));
   Snd.win();vib([40,60,40,60,80]);
   const rest=G.players.filter(p=>p!==w).sort((a,b)=>(b.outOrder||0)-(a.outOrder||0));
   const isMe=w&&!w.bot;
@@ -2486,7 +2471,7 @@ function openHelp(key='basico'){
 Object.assign(HELP,{
   imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas zonas una a una: tres barrios de Barcelona y después Madrid, València, Sevilla, París, Londres, Nueva York y Tokio. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
   mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
-  golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival; en ese caso, además, le pagas el alquiler. Si te pillan, <b>pierdes todo el botín del turno</b>.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> el primero que complete <b>2 grupos de color</b>. Si se reparten todas las calles antes, gana quien tenga más patrimonio. Puedes construir y negociar como en el modo clásico.</p>`],
+  golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival. Si te pillan, <b>pierdes todo el botín del turno</b>. Si es la calle de un rival, además le pagas el alquiler entero; si no te llega, tendrás que hipotecar o vender, y si ni así puedes, quiebras.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> como en una partida normal, la partida sigue hasta que todos los rivales han quebrado. Completa grupos, construye casas y hoteles, y haz que caer en tus calles les salga muy caro. También puedes negociar como en el modo clásico.</p>`],
   camara:['La cámara',`<p>La cámara sigue al jugador que tiene el turno para que veas bien cada casilla.</p><ul><li><b>Seguir</b> (botón de la diana): acerca la vista y acompaña a la ficha que se mueve.</li><li><b>Tablero</b> (botón de la cuadrícula): muestra el tablero entero.</li><li>En el móvil puedes <b>pellizcar</b> para acercar o alejar y <b>arrastrar</b> para moverte. En el ordenador, usa la rueda del ratón y arrastra.</li><li>Doble toque: acerca la vista o vuelve al tablero entero.</li></ul><p>Si mueves la vista a mano, al empezar el siguiente turno vuelve al modo que elegiste.</p>`],
   instalar:['Instalar la app',`<p>Magnate se puede instalar en el móvil o en el ordenador como una app: icono propio, pantalla completa y funciona sin conexión.</p><p>Toca <b>Instalar en el móvil</b> en el menú para ver los pasos de tu dispositivo.</p>`],
 });
