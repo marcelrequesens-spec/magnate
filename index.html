@@ -819,14 +819,19 @@ const SPEEDS=[{v:2.4,l:'Muy lento'},{v:1.6,l:'Lento'},{v:1,l:'Normal'},{v:.5,l:'
 const MEM={};let HYDRATED=false;
 function kvGet(k){try{const v=localStorage.getItem(k);if(v!=null)return v}catch(e){}return MEM[k]??null}
 let _idb=null;
-function idbOpen(){if(_idb)return _idb;_idb=new Promise(res=>{try{const r=indexedDB.open('magnate',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}});return _idb}
-async function idbGet(k){const db=await idbOpen();if(!db)return null;return new Promise(res=>{try{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)}catch(e){res(null)}})}
-async function idbSet(k,v){const db=await idbOpen();if(!db)return false;return new Promise(res=>{try{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})}
+/* El perfil nunca se sustituye por otro con menos progreso (nivel, zonas, partidas jugadas). */
+const GUARD=k=>k==='magnate-imperio-v1';
+const pScore=v=>{try{const p=typeof v==='string'?JSON.parse(v):v;return p&&p.v===1?(p.level||1)*1e6+(p.progress||0)*1e3+Math.min(999,(p.stats&&p.stats.played)||0):-1}catch(e){return -1}};
+let _rec=0;function regress(v){if(Date.now()-_rec<3000)return;_rec=Date.now();setTimeout(()=>{try{recoverProf(v)}catch(e){}},0)}
+function idbOpen(){if(_idb)return _idb;_idb=new Promise(res=>{try{const r=indexedDB.open('magnate',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{const db=r.result;db.onclose=()=>{_idb=null};db.onversionchange=()=>{try{db.close()}catch(e){}_idb=null};res(db)};r.onerror=()=>{_idb=null;res(null)};r.onblocked=()=>{_idb=null;res(null)}}catch(e){_idb=null;res(null)}});return _idb}
+async function idbGet(k,tries=3){for(let i=0;i<tries;i++){const db=await idbOpen();if(db){const v=await new Promise(res=>{try{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res({v:q.result??null});q.onerror=()=>res(null)}catch(e){res(null)}});if(v)return v.v;_idb=null}await new Promise(r=>setTimeout(r,250))}return null}
+async function idbSet(k,v,force){for(let i=0;i<2;i++){const db=await idbOpen();if(db){const ok=await new Promise(res=>{try{const t=db.transaction('kv','readwrite'),os=t.objectStore('kv');if(GUARD(k)&&!force&&v!=null){const q=os.get(k);q.onsuccess=()=>{const cur=q.result;if(typeof cur==='string'&&pScore(cur)>pScore(v)){regress(cur);return}os.put(v,k)}}else os.put(v,k);t.oncomplete=()=>res(true);t.onerror=()=>res(false);t.onabort=()=>res(false)}catch(e){res(false)}});if(ok)return true;_idb=null}await new Promise(r=>setTimeout(r,250))}return false}
+async function idbKeys(){const db=await idbOpen();if(!db)return[];return new Promise(res=>{try{const q=db.transaction('kv').objectStore('kv').getAllKeys();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])}catch(e){res([])}})}
 const cacheUrl=k=>new URL('__datos/'+encodeURIComponent(k),location.href).href;
 async function cacheGet(k){try{if(!window.caches)return null;const c=await caches.open('magnate-datos');const r=await c.match(cacheUrl(k));return r?await r.text():null}catch(e){return null}}
-async function cacheSet(k,v){try{if(!window.caches)return;const c=await caches.open('magnate-datos');if(v==null)await c.delete(cacheUrl(k));else await c.put(cacheUrl(k),new Response(v,{headers:{'content-type':'application/json'}}))}catch(e){}}
+async function cacheSet(k,v,force){try{if(!window.caches)return;const c=await caches.open('magnate-datos');if(v==null){await c.delete(cacheUrl(k));return}if(GUARD(k)&&!force){const r=await c.match(cacheUrl(k));const cur=r?await r.text():null;if(cur&&pScore(cur)>pScore(v)){regress(cur);return}}await c.put(cacheUrl(k),new Response(v,{headers:{'content-type':'application/json'}}))}catch(e){}}
 let LAST_SAVE=0;
-function kvSet(k,v){MEM[k]=v;try{localStorage.setItem(k,v)}catch(e){}if(HYDRATED){idbSet(k,v);cacheSet(k,v)}LAST_SAVE=Date.now()}
+function kvSet(k,v,force){if(GUARD(k)&&!force){let cur=null;try{cur=localStorage.getItem(k)}catch(e){}if(cur==null)cur=MEM[k]??null;if(cur&&pScore(cur)>pScore(v)){regress(cur);return}}MEM[k]=v;try{localStorage.setItem(k,v)}catch(e){}if(HYDRATED){idbSet(k,v,force);cacheSet(k,v,force)}LAST_SAVE=Date.now()}
 function kvDel(k){delete MEM[k];try{localStorage.removeItem(k)}catch(e){}if(HYDRATED){idbSet(k,null);cacheSet(k,null)}}
 const tsOf=v=>{try{return JSON.parse(v)._ts||0}catch(e){return 0}};
 let CFG={speed:1.6,sound:true,cam:''};
@@ -1979,6 +1984,35 @@ function loadProf(){
 {const base=loadProf;loadProf=()=>{const p=base();if(p.zv!==2){p.zones={};p.progress=0;p.zv=2}if(p.fv!==2){const wins=Object.values(p.zones||{}).reduce((a,z)=>a+(z.wins||0),0);p.fortune=Math.min(p.fortune||1500,1500+600*wins);p.fv=2}return p}}
 let PROF=loadProf();
 const saveProf=()=>{if(!HYDRATED)return;PROF._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(PROF))};
+function diag(e){try{const l=JSON.parse(localStorage.getItem('magnate-diario')||'[]');l.push({t:Date.now(),e});localStorage.setItem('magnate-diario',JSON.stringify(l.slice(-30)))}catch(x){}}
+function recoverProf(v){
+  kvSet(PROF_KEY,v,true);PROF=loadProf();diag('Progreso recuperado automáticamente');
+  try{applyLook();if(!$('#start').hidden)renderHome();homeToast('He recuperado tu progreso automáticamente.')}catch(e){}
+}
+/* Copias automáticas: una por día (se actualiza cada pocos minutos), se guardan las 10 últimas */
+let LAST_SNAP=0;
+async function autoSnap(forceNow){
+  if(!HYDRATED||(!forceNow&&Date.now()-LAST_SNAP<5*60e3))return;
+  const pv=kvGet(PROF_KEY);if(!pv||pScore(pv)<0)return;
+  LAST_SNAP=Date.now();
+  const d=new Date(),key='copia:'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const old=await idbGet(key,1);try{if(old&&pScore(JSON.parse(old).keys[PROF_KEY])>pScore(pv))return}catch(e){}
+  const data={app:'magnate',v:1,at:Date.now(),keys:{}};
+  for(const k of KEYS()){const v=kvGet(k);if(v)data.keys[k]=v}
+  await idbSet(key,JSON.stringify(data));
+  const all=(await idbKeys()).filter(k=>String(k).startsWith('copia:')).sort();
+  for(const k of all.slice(0,Math.max(0,all.length-10)))await idbSet(k,null);
+}
+async function listSnaps(){
+  const ks=(await idbKeys()).filter(k=>String(k).startsWith('copia:')).sort().reverse(),out=[];
+  for(const k of ks){const v=await idbGet(k,1);if(!v)continue;try{const d=JSON.parse(v),p=JSON.parse(d.keys[PROF_KEY]);out.push({k,at:d.at,lv:p.level||1,zones:Object.values(p.zones||{}).filter(z=>z.wins>0).length,played:(p.stats&&p.stats.played)||0,d})}catch(e){}}
+  return out;
+}
+function restoreSnap(d){
+  HYDRATED=true;
+  for(const k in d.keys){let o=null;try{o=JSON.parse(d.keys[k])}catch(e){}if(o&&typeof o==='object'){o._ts=Date.now();kvSet(k,JSON.stringify(o),true)}}
+  PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();diag('Copia automática restaurada');
+}
 const isImp=()=>!!(G&&G.mode==='imperio'&&G.imp);
 const xpNeed=l=>200+l*150;
 const skill=k=>PROF.skills[k]||0;
@@ -2333,7 +2367,7 @@ function openBackup(back){
     <textarea id="bkIn" placeholder="Pega aquí tu código" style="width:100%;height:70px;background:var(--bg);color:var(--ink);border:1px solid var(--line-2);border-radius:12px;padding:10px;font:12px monospace"></textarea>
     <button class="btn pri" type="button" id="bkLoad" style="margin-top:8px">Recuperar</button><p class="note" id="bkMsg" style="margin-top:8px"></p>`});
   m.body.querySelector('#bkCopy').onclick=()=>{const t=m.body.querySelector('#bkOut');try{navigator.clipboard.writeText(code).then(()=>{m.body.querySelector('#bkCopy').textContent='Copiado'},()=>{t.select()})}catch(e){t.select()}};
-  m.body.querySelector('#bkLoad').onclick=()=>{try{const d=JSON.parse(decodeURIComponent(escape(atob(m.body.querySelector('#bkIn').value.trim()))));if(!d.p||d.p.v!==1)throw 0;d.p._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(d.p));PROF=loadProf();if(d.s)kvSet(saveKey('imperio'),JSON.stringify(d.s));applyLook();m.body.querySelector('#bkMsg').textContent='Progreso recuperado.';Snd.win()}catch(e){m.body.querySelector('#bkMsg').textContent='Ese código no es válido. Cópialo entero e inténtalo otra vez.'}};
+  m.body.querySelector('#bkLoad').onclick=()=>{try{const d=JSON.parse(decodeURIComponent(escape(atob(m.body.querySelector('#bkIn').value.trim()))));if(!d.p||d.p.v!==1)throw 0;d.p._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(d.p),true);PROF=loadProf();if(d.s)kvSet(saveKey('imperio'),JSON.stringify(d.s));applyLook();m.body.querySelector('#bkMsg').textContent='Progreso recuperado.';Snd.win()}catch(e){m.body.querySelector('#bkMsg').textContent='Ese código no es válido. Cópialo entero e inténtalo otra vez.'}};
   m.btn('Listo','pri',()=>m.close());
 }
 function openSkills(){
@@ -2727,8 +2761,9 @@ async function hydrate(){
     const cur=kvGet(k),a=await idbGet(k),b=await cacheGet(k);
     const c=[cur,a,b].filter(v=>typeof v==='string'&&v);
     if(!c.length)continue;
-    const best=c.reduce((x,y)=>tsOf(y)>tsOf(x)?y:x);
-    if(best!==cur){MEM[k]=best;try{localStorage.setItem(k,best)}catch(e){}changed=true}
+    const best=c.reduce((x,y)=>{if(GUARD(k)){const a=pScore(x),b=pScore(y);if(a!==b)return a>b?x:y}return tsOf(y)>tsOf(x)?y:x});
+    if(GUARD(k))diag(`Al abrir: nivel ${[cur,a,b].map(v=>v?Math.floor(pScore(v)/1e6):'-').join(' / ')}`);
+    if(best!==cur){MEM[k]=best;try{localStorage.setItem(k,best)}catch(e){}changed=true;if(GUARD(k)&&cur)diag('Progreso recuperado al abrir')}
     if(a!==best)idbSet(k,best);if(b!==best)cacheSet(k,best);
   }
   HYDRATED=true;
@@ -2756,7 +2791,7 @@ async function exportData(){
 function importData(text){
   const d=JSON.parse(text);if(!d||d.app!=='magnate'||!d.keys)throw new Error('formato');
   HYDRATED=true;
-  for(const k in d.keys){const v=d.keys[k];let o=null;try{o=JSON.parse(v)}catch(e){}if(o&&typeof o==='object'){o._ts=Date.now();kvSet(k,JSON.stringify(o))}}
+  for(const k in d.keys){const v=d.keys[k];let o=null;try{o=JSON.parse(v)}catch(e){}if(o&&typeof o==='object'){o._ts=Date.now();kvSet(k,JSON.stringify(o),true)}}
   PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();
 }
 function openData(){
@@ -2764,13 +2799,17 @@ function openData(){
   const draw=async()=>{
     const h=await storageHealth();
     const row=(ok,t,d)=>`<div class="kv"><span>${ic(ok?'check':'x')} ${t}</span><b style="color:${ok?'var(--good)':'var(--bad)'}">${d}</b></div>`;
-    m.body.innerHTML=`<p class="lead">Todo se guarda en este móvil, sin necesidad de internet: tu perfil, la campaña y las partidas en curso. Se guarda por triplicado para que no se pierda.</p>
+    m.body.innerHTML=`<p class="lead">Todo se guarda solo, en este móvil y sin internet: cada minuto, al salir de la app y al terminar cada partida. Se guarda por triplicado y la app nunca cambia tu progreso por otro con menos nivel: si alguna copia falla, recupera la buena automáticamente.</p>
     <div style="margin-top:12px">${row(h.ls,'Guardado principal',h.ls?'Funciona':'Bloqueado')}${row(h.idb,'Copia de seguridad interna',h.idb?'Funciona':'Bloqueada')}${row(h.cache,'Segunda copia interna',h.cache?'Funciona':'No disponible')}<div class="kv"><span>${ic('turn')} Última copia en archivo</span><b style="color:var(--muted)">${PROF.lastExport?new Date(PROF.lastExport).toLocaleDateString('es-ES'):'Nunca'}</b></div><div class="kv"><span>${ic('lock')} Protección extra del sistema</span><b style="color:var(--muted)">${h.persist?'Activada':'La decide iOS'}</b></div></div>
     ${storageOk()?'':`<p class="note" style="margin-top:12px;color:var(--bad)">Tu iPhone no está dejando guardar datos a Magnate. Ve a <b>Ajustes → Apps → Safari</b> y desactiva <b>«Bloquear todas las cookies»</b>. Después cierra Magnate y vuelve a abrirlo.</p>`}
-    <div class="fl" style="margin-top:18px">Copia en un archivo</div>
-    <p class="note">Guarda un archivo con todo tu progreso en Archivos, iCloud o donde quieras. Si algún día se borra la app o cambias de móvil, lo recuperas con un toque.</p>
+    <div class="fl" style="margin-top:18px">Copias automáticas</div>
+    <p class="note">La app guarda sola una copia de todo cada día (las 10 últimas). No tienes que hacer nada.</p>
+    <div id="dSnaps" style="margin-top:8px"><p class="note">Cargando…</p></div>
+    <div class="fl" style="margin-top:18px">Copia en un archivo (opcional)</div>
+    <p class="note">Solo hace falta si cambias de móvil o borras la app: guarda un archivo en Archivos o iCloud.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn pri" type="button" id="dExp">${ic('share')}Guardar copia</button><label class="btn" for="dImp" style="cursor:pointer">${ic('restart')}Recuperar desde archivo</label><button class="btn" type="button" id="dCode">${ic('key')}Recuperar con código</button><input type="file" id="dImp" accept=".json,application/json" hidden></div>
     <p class="note" id="dMsg" style="margin-top:10px"></p>`;
+    listSnaps().then(sn=>{const box=m.body.querySelector('#dSnaps');if(!box)return;box.innerHTML=sn.length?sn.map((x,i)=>`<div class="kv"><span>${new Date(x.at).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · nivel ${x.lv} · ${x.zones} zonas</span><b><button class="btn" type="button" data-sn="${i}" style="padding:6px 12px;min-height:0">Recuperar</button></b></div>`).join(''):'<p class="note">Aún no hay copias: se crea la primera en un momento.</p>';box.querySelectorAll('[data-sn]').forEach(b=>b.onclick=async()=>{const x=sn[+b.dataset.sn];if(await ask('¿Recuperar esta copia?',`<p class="lead">Volverás al progreso del ${new Date(x.at).toLocaleString('es-ES')} (nivel ${x.lv}, ${x.zones} zonas).</p>`,[{label:'Cancelar',v:false},{label:'Recuperar',cls:'pri',v:true}])){restoreSnap(x.d);m.body.querySelector('#dMsg').textContent='Copia recuperada.';Snd.win()}})});
     m.body.querySelector('#dCode').onclick=()=>{m.close();openBackup(()=>{if(!$('#start').hidden)renderHome()})};
     m.body.querySelector('#dExp').onclick=async()=>{const ok=await exportData();m.body.querySelector('#dMsg').textContent=ok?'Copia creada. Guárdala en Archivos o en iCloud.':''};
     m.body.querySelector('#dImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{importData(r.result);m.body.querySelector('#dMsg').textContent='Progreso recuperado correctamente.';Snd.win()}catch(err){m.body.querySelector('#dMsg').textContent='Ese archivo no es una copia de Magnate.'}};r.readAsText(f)};
@@ -2838,8 +2877,8 @@ function renderHome(){
   const one=(m,l)=>`<button class="btn white" type="button" data-act="new" data-m="${m}">${ic('play')}${l}</button>`;
   const zonesDone=Object.values(PROF.zones).filter(z=>z.wins>0).length;
   const hasProg=PROF.stats.played>0||PROF.progress>0;
-  const needBk=HYDRATED&&hasProg&&Date.now()-(PROF.lastExport||0)>3*864e5;
-  const bk=needBk?`<div class="daily" id="bkNudge" style="border-color:var(--good);background:linear-gradient(120deg,#173326,#1d2b38);animation:none">${ic('share')}<span><b>Haz una copia de tu progreso</b><small>${PROF.lastExport?'Tu última copia es de hace más de 3 días.':'Todavía no tienes ninguna copia.'} Un toque y la guardas en Archivos o iCloud.</small></span></div>`:'';
+  const needBk=HYDRATED&&hasProg&&Date.now()-(PROF.lastExport||0)>14*864e5;
+  const bk=needBk?`<div class="daily" id="bkNudge" style="border-color:var(--good);background:linear-gradient(120deg,#173326,#1d2b38);animation:none">${ic('share')}<span><b>Haz una copia de tu progreso</b><small>Tu progreso ya se guarda solo. Si quieres, guarda también una copia fuera del móvil (opcional).</small></span></div>`:'';
   const warn=HYDRATED&&!storageOk()?`<div class="daily" style="border-color:var(--bad);background:linear-gradient(120deg,#3d1d1d,#1d2b38);animation:none" id="stWarn">${ic('x')}<span><b>Tu iPhone no deja guardar el progreso</b><small>Toca aquí para ver cómo arreglarlo.</small></span></div>`:'';
   $('#stWarnBox').innerHTML=warn+bk;const sw=$('#stWarn');if(sw)sw.onclick=openData;const bn=$('#bkNudge');if(bn)bn.onclick=async()=>{if(await exportData())homeToast('Copia creada. Guárdala en Archivos o iCloud.');renderHome()};
   $('#tiles').innerHTML=
@@ -2901,11 +2940,12 @@ function boot(g){
 }
 if(window.__PWA__&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 applyLook();if(PROF.token)pickTok=PROF.token;
-addEventListener('pagehide',()=>{saveProf()});document.addEventListener('visibilitychange',()=>{if(document.hidden)saveProf()});
+addEventListener('pagehide',()=>{save();saveProf()});document.addEventListener('visibilitychange',()=>{if(document.hidden){save();saveProf();autoSnap(true)}});
+setInterval(()=>{if(!HYDRATED)return;try{save();saveProf();autoSnap()}catch(e){}},60e3);
 updSound();updSpeed();updPause();
 buildCubes();setDie($('#d1'),1);setDie($('#d2'),1);
 buildBoard();layout();goStart();
-hydrate().then(async ch=>{if(ch){PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();updSound();updSpeed()}await storageHealth();if(!$('#start').hidden)renderHome();saveProf()});
+hydrate().then(async ch=>{if(ch){PROF=loadProf();try{Object.assign(CFG,JSON.parse(kvGet(CFG_KEY)||'{}'))}catch(e){}applyLook();updSound();updSpeed()}await storageHealth();if(!$('#start').hidden)renderHome();saveProf();autoSnap(true)});
 </script>
 
 </body>
