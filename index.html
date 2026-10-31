@@ -551,6 +551,7 @@ html[data-dice="negro"]{--die-a:#3f474f;--die-b:#16191d;--pip-c:#f3cb7b}
 .zside{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .stars,.lives{display:inline-flex;gap:2px;vertical-align:middle}.stars .ic{width:17px;height:17px;color:var(--line-2)}.lives .ic{width:14px;height:14px;color:var(--line-2)}
 .bosscard{display:flex;gap:14px;align-items:center;padding:14px;border-radius:18px;background:linear-gradient(120deg,#3a2422,var(--surface-2));border:1px solid #6b3a33}
+#stWarnBox{display:flex;flex-direction:column;gap:8px}
 .bosscard.final{background:linear-gradient(120deg,#4a1d1d,#2a1730);border-color:#a8433a;box-shadow:0 0 0 1px rgba(242,128,111,.25),0 14px 34px -10px rgba(168,67,58,.5)}
 .cities{display:flex;flex-direction:column;gap:10px}
 .cityhead{display:flex;align-items:center;gap:12px;margin-top:10px}
@@ -1948,7 +1949,7 @@ function fixCard(card){
 
 /* =================== Imperio: perfil y progreso =================== */
 const PROF_KEY='magnate-imperio-v1';
-function defProfile(){return{v:1,name:'',token:'hat',level:1,xp:0,points:0,fortune:1500,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
+function defProfile(){return{v:1,created:Date.now(),lastExport:0,name:'',token:'hat',level:1,xp:0,points:0,fortune:1500,skills:{con:0,neg:0,inv:0},capital:0,biz:{},zones:{},progress:0,album:{},ach:{},
   daily:{last:'',streak:0,max:0},stats:{played:0,wins:0,modes:{clasico:{p:0,w:0},golpe:{p:0,w:0},imperio:{p:0,w:0}},rentIn:0,bestNW:0,bosses:0,streets:{}},look:{theme:'noche',dice:'clasico'}}}
 function loadProf(){
   try{const s=JSON.parse(kvGet(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
@@ -2214,6 +2215,7 @@ function impFinish(win){
     ${achs.length?`<div class="kv"><span>Logros nuevos</span><b>${achs.map(a=>a.n).join(', ')}</b></div>`:''}
     ${ups?`<p class="note" style="margin-top:12px">Tienes <b>${PROF.points}</b> ${PROF.points===1?'punto':'puntos'} para gastar en el árbol de mejoras.</p>`:''}`});
   m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-${win?'trophy':'down'}"/></svg>`);
+  m.btn(ic('share')+'Guardar copia','',async()=>{await exportData()});
   m.btn('Volver al mapa','pri',()=>{m.close();RUN++;G=null;openHub()});
 }
 
@@ -2296,9 +2298,9 @@ function zoneIntro(zi){
   if(sv&&sv.imp)m.body.insertAdjacentHTML('beforeend',`<p class="note" style="margin-top:10px;color:var(--bad)">Tienes una partida a medias en ${esc(zoneOf(sv.imp.zi).name)} (ronda ${sv.round}). Si empiezas esta, aquella se perderá.</p>`);
   m.btn(ic('dice')+'Jugar','pri',()=>{m.close();$('#hub').hidden=true;Snd.get();boot(newImperioGame(zi))});
 }
-function openBackup(){
+function openBackup(back){
   const code=btoa(unescape(encodeURIComponent(JSON.stringify({p:PROF,s:loadSave('imperio')}))));
-  const m=modal({title:'Copia de seguridad',cls:'wide',closable:true,onClose:openHub,html:`<p class="lead">Tu progreso se guarda solo en este dispositivo. Copia este código y guárdalo (por ejemplo, en Notas) para recuperarlo si borras la app o cambias de móvil.</p>
+  const m=modal({title:'Copia de seguridad',cls:'wide',closable:true,onClose:back||openHub,html:`<p class="lead">Tu progreso se guarda solo en este dispositivo. Copia este código y guárdalo (por ejemplo, en Notas) para recuperarlo si borras la app o cambias de móvil.</p>
     <textarea id="bkOut" readonly style="width:100%;height:90px;margin-top:12px;background:var(--bg);color:var(--ink);border:1px solid var(--line-2);border-radius:12px;padding:10px;font:12px monospace;-webkit-user-select:all;user-select:all">${code}</textarea>
     <button class="btn" type="button" id="bkCopy" style="margin-top:8px">Copiar código</button>
     <div class="fl" style="margin-top:18px">Recuperar progreso</div>
@@ -2458,6 +2460,7 @@ function showWinner(w){
   const list=[w,...rest].filter(Boolean).map((p,k)=>`<div><span class="pos">${k+1}</span>${disc(p)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><small>${p.bot?ARCH[p.pers.arch].d:'Tú'}</small></div><span class="note">${k===0?fmt(netWorth(p)):'Quiebra'}</span></div>`).join('');
   const m=modal({title:isMe?'Has ganado la partida':`Gana ${esc(w?w.name:'nadie')}`,html:`<p class="lead">${isMe?'Has llevado a la quiebra a todos tus rivales. Eres el gran magnate de Barcelona.':'La partida ha terminado.'} Ha durado ${G.round} rondas.</p><div class="fl" style="margin-top:16px">Clasificación y estilos de juego</div><div class="rank">${list}</div>`});
   m.md.querySelector('.mh').insertAdjacentHTML('afterbegin',`<svg class="ic" style="width:32px;height:32px;color:var(--brass)"><use href="#i-trophy"/></svg>`);
+  if(w&&!w.bot)m.btn(ic('share')+'Guardar copia','',async()=>{await exportData()});
   m.btn('Nueva partida','pri',()=>{m.close();goStart()});
 }
 async function decideOrder(){
@@ -2710,6 +2713,7 @@ async function storageHealth(){
 }
 const storageOk=()=>HEALTH.ls||HEALTH.idb;
 async function exportData(){
+  try{PROF.lastExport=Date.now();saveProf()}catch(e){}
   const data={app:'magnate',v:1,at:Date.now(),keys:{}};
   for(const k of KEYS()){const v=kvGet(k);if(v)data.keys[k]=v}
   const txt=JSON.stringify(data),name=`magnate-copia-${new Date().toISOString().slice(0,10)}.json`;
@@ -2729,12 +2733,13 @@ function openData(){
     const h=await storageHealth();
     const row=(ok,t,d)=>`<div class="kv"><span>${ic(ok?'check':'x')} ${t}</span><b style="color:${ok?'var(--good)':'var(--bad)'}">${d}</b></div>`;
     m.body.innerHTML=`<p class="lead">Todo se guarda en este móvil, sin necesidad de internet: tu perfil, la campaña y las partidas en curso. Se guarda por triplicado para que no se pierda.</p>
-    <div style="margin-top:12px">${row(h.ls,'Guardado principal',h.ls?'Funciona':'Bloqueado')}${row(h.idb,'Copia de seguridad interna',h.idb?'Funciona':'Bloqueada')}${row(h.cache,'Segunda copia interna',h.cache?'Funciona':'No disponible')}<div class="kv"><span>${ic('lock')} Protección extra del sistema</span><b style="color:var(--muted)">${h.persist?'Activada':'La decide iOS'}</b></div></div>
+    <div style="margin-top:12px">${row(h.ls,'Guardado principal',h.ls?'Funciona':'Bloqueado')}${row(h.idb,'Copia de seguridad interna',h.idb?'Funciona':'Bloqueada')}${row(h.cache,'Segunda copia interna',h.cache?'Funciona':'No disponible')}<div class="kv"><span>${ic('turn')} Última copia en archivo</span><b style="color:var(--muted)">${PROF.lastExport?new Date(PROF.lastExport).toLocaleDateString('es-ES'):'Nunca'}</b></div><div class="kv"><span>${ic('lock')} Protección extra del sistema</span><b style="color:var(--muted)">${h.persist?'Activada':'La decide iOS'}</b></div></div>
     ${storageOk()?'':`<p class="note" style="margin-top:12px;color:var(--bad)">Tu iPhone no está dejando guardar datos a Magnate. Ve a <b>Ajustes → Apps → Safari</b> y desactiva <b>«Bloquear todas las cookies»</b>. Después cierra Magnate y vuelve a abrirlo.</p>`}
     <div class="fl" style="margin-top:18px">Copia en un archivo</div>
     <p class="note">Guarda un archivo con todo tu progreso en Archivos, iCloud o donde quieras. Si algún día se borra la app o cambias de móvil, lo recuperas con un toque.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn pri" type="button" id="dExp">${ic('share')}Guardar copia</button><label class="btn" for="dImp" style="cursor:pointer">${ic('restart')}Recuperar desde archivo</label><input type="file" id="dImp" accept=".json,application/json" hidden></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn pri" type="button" id="dExp">${ic('share')}Guardar copia</button><label class="btn" for="dImp" style="cursor:pointer">${ic('restart')}Recuperar desde archivo</label><button class="btn" type="button" id="dCode">${ic('key')}Recuperar con código</button><input type="file" id="dImp" accept=".json,application/json" hidden></div>
     <p class="note" id="dMsg" style="margin-top:10px"></p>`;
+    m.body.querySelector('#dCode').onclick=()=>{m.close();openBackup(()=>{if(!$('#start').hidden)renderHome()})};
     m.body.querySelector('#dExp').onclick=async()=>{const ok=await exportData();m.body.querySelector('#dMsg').textContent=ok?'Copia creada. Guárdala en Archivos o en iCloud.':''};
     m.body.querySelector('#dImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{importData(r.result);m.body.querySelector('#dMsg').textContent='Progreso recuperado correctamente.';Snd.win()}catch(err){m.body.querySelector('#dMsg').textContent='Ese archivo no es una copia de Magnate.'}};r.readAsText(f)};
   };
@@ -2800,8 +2805,11 @@ function renderHome(){
   const two=(m)=>`<button class="btn white" type="button" data-act="cont" data-m="${m}">${ic('play')}Continuar</button><button class="btn glass" type="button" data-act="new" data-m="${m}">Nueva</button>`;
   const one=(m,l)=>`<button class="btn white" type="button" data-act="new" data-m="${m}">${ic('play')}${l}</button>`;
   const zonesDone=Object.values(PROF.zones).filter(z=>z.wins>0).length;
+  const hasProg=PROF.stats.played>0||PROF.progress>0;
+  const needBk=HYDRATED&&hasProg&&Date.now()-(PROF.lastExport||0)>3*864e5;
+  const bk=needBk?`<div class="daily" id="bkNudge" style="border-color:var(--good);background:linear-gradient(120deg,#173326,#1d2b38);animation:none">${ic('share')}<span><b>Haz una copia de tu progreso</b><small>${PROF.lastExport?'Tu última copia es de hace más de 3 días.':'Todavía no tienes ninguna copia.'} Un toque y la guardas en Archivos o iCloud.</small></span></div>`:'';
   const warn=HYDRATED&&!storageOk()?`<div class="daily" style="border-color:var(--bad);background:linear-gradient(120deg,#3d1d1d,#1d2b38);animation:none" id="stWarn">${ic('x')}<span><b>Tu iPhone no deja guardar el progreso</b><small>Toca aquí para ver cómo arreglarlo.</small></span></div>`:'';
-  $('#stWarnBox').innerHTML=warn;const sw=$('#stWarn');if(sw)sw.onclick=openData;
+  $('#stWarnBox').innerHTML=warn+bk;const sw=$('#stWarn');if(sw)sw.onclick=openData;const bn=$('#bkNudge');if(bn)bn.onclick=async()=>{if(await exportData())homeToast('Copia creada. Guárdala en Archivos o iCloud.');renderHome()};
   $('#tiles').innerHTML=
     tile('clasico','Partida completa','Clásico','Compra, construye y lleva a la quiebra a tus tres rivales.',`<span>Ganadas: ${PROF.stats.modes.clasico.w}</span>`,sc&&liveTxt(sc),sc?two('clasico'):one('clasico','Jugar'))+
     tile('golpe','Partida rápida','El Golpe','Tira cuanto quieras y plántate antes de que te pillen.',`<span>Ganadas: ${PROF.stats.modes.golpe.w}</span>`,sg&&liveTxt(sg),sg?two('golpe'):one('golpe','Jugar'))+
