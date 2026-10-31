@@ -1705,7 +1705,7 @@ async function land(p,dice,mode){
       await sleep(500);
     }
   }else switch(sq.type){
-    case 'tax':if(await pay(p,sq.amount,null,sq.name))log(`${nm(p)} paga ${fmt(sq.amount)} de ${sq.name.toLowerCase()}`,'bad');await sleep(400);break;
+    case 'tax':{const tx=isImp()&&!p.bot&&hasBiz('gestoria')?sq.amount/2:sq.amount;if(await pay(p,tx,null,sq.name))log(`${nm(p)} paga ${fmt(tx)} de ${sq.name.toLowerCase()}`,'bad');await sleep(400);}break;
     case 'chance':case 'chest':await drawCard(p,sq.type);break;
     case 'gotojail':await toJail(p);break;
     case 'parking':if(isImp()&&G.imp.ev&&G.imp.ev.id==='loteria'){addMoney(p,300);log(`${nm(p)} gana la lotería del parking: 300 €`,'good');Snd.cash()}else log(`${nm(p)} descansa en el Parking gratuito`);break;
@@ -1760,10 +1760,10 @@ async function drawCard(p,deck){
     case 'nearUtil':{const t=[12,28].find(x=>x>p.pos)??12;await advanceTo(p,t);await land(p,G.lastDice,'util10');break}
     case 'back3':await stepBy(p,-3);await land(p,G.lastDice);break;
     case 'collect':addMoney(p,a.amt);Snd.cash();log(`${nm(p)} cobra ${fmt(a.amt)}`,'good');render();break;
-    case 'pay':if(await pay(p,a.amt,null,'carta'))log(`${nm(p)} paga ${fmt(a.amt)}`,'bad');break;
+    case 'pay':{const v=isImp()&&!p.bot&&hasBiz('aseguradora')?a.amt/2:a.amt;if(await pay(p,v,null,'carta'))log(`${nm(p)} paga ${fmt(v)}`,'bad');break}
     case 'goojf':p.cards.push(deck);log(`${nm(p)} guarda la carta «Libre de la cárcel»`,'free','key');render();break;
-    case 'jail':await toJail(p);break;
-    case 'repairs':{const{h,H}=buildingsOf(p),tot=h*a.h+H*a.H;if(tot){if(await pay(p,tot,null,'reparaciones'))log(`${nm(p)} paga ${fmt(tot)} en reparaciones`,'bad')}else log(`${nm(p)} no tiene edificios: no paga nada`);break}
+    case 'jail':if(isImp()&&!p.bot&&hasBiz('seguridad')){log(`Tu empresa de seguridad te libra de la cárcel`,'free','shield');break}await toJail(p);break;
+    case 'repairs':{const{h,H}=buildingsOf(p),tot=Math.round((h*a.h+H*a.H)*(isImp()&&!p.bot&&hasBiz('aseguradora')?.5:1));if(tot){if(await pay(p,tot,null,'reparaciones'))log(`${nm(p)} paga ${fmt(tot)} en reparaciones`,'bad')}else log(`${nm(p)} no tiene edificios: no paga nada`);break}
     case 'payEach':for(const o of active()){if(o===p)continue;if(!await pay(p,a.amt,o,'carta'))break}if(!p.out)log(`${nm(p)} paga ${fmt(a.amt)} a cada jugador`,'bad');break;
     case 'collectEach':for(const o of active()){if(o===p)continue;await pay(o,a.amt,p,'cumpleaños de '+p.name)}log(`${nm(p)} recibe ${fmt(a.amt)} de cada jugador`,'good');break;
   }
@@ -1954,11 +1954,11 @@ function loadProf(){
   try{const s=JSON.parse(kvGet(PROF_KEY)||'null');if(s&&s.v===1){const d=defProfile();return{...d,...s,skills:{...d.skills,...s.skills},daily:{...d.daily,...s.daily},stats:{...d.stats,...s.stats,modes:{...d.stats.modes,...(s.stats||{}).modes}},look:{...d.look,...s.look}}}}catch(e){}
   return defProfile();
 }
-{const base=loadProf;loadProf=()=>{const p=base();if(p.zv!==2){p.zones={};p.progress=0;p.zv=2}return p}}
+{const base=loadProf;loadProf=()=>{const p=base();if(p.zv!==2){p.zones={};p.progress=0;p.zv=2}if(p.fv!==2){const wins=Object.values(p.zones||{}).reduce((a,z)=>a+(z.wins||0),0);p.fortune=Math.min(p.fortune||1500,1500+600*wins);p.fv=2}return p}}
 let PROF=loadProf();
 const saveProf=()=>{if(!HYDRATED)return;PROF._ts=Date.now();kvSet(PROF_KEY,JSON.stringify(PROF))};
 const isImp=()=>!!(G&&G.mode==='imperio'&&G.imp);
-const xpNeed=l=>150+l*100;
+const xpNeed=l=>200+l*150;
 const skill=k=>PROF.skills[k]||0;
 const hasBiz=id=>!!PROF.biz[id];
 const zoneOf=zi=>ZONES[zi%ZONES.length];
@@ -1968,7 +1968,7 @@ const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const realNW=()=>netWorth(G.players[0])-((G.imp&&G.imp.debt)||0);
 const lossFortune=(F0,debt)=>Math.max(debt?1000:1200,Math.round(F0*.9/10)*10-Math.round(debt*.5/10)*10);
 const fortune=()=>Math.max(1200,PROF.fortune||1500);
-const rivalMoney=(zi,boss)=>{const z=zoneOf(zi);return 1500+300*z.ci+(z.final?200:0)+600*tierOf(zi)+(boss?(z.final?900:400):0)};
+const rivalMoney=(zi,boss)=>{const z=zoneOf(zi),base=Math.max(1500+300*z.ci+600*tierOf(zi),fortune());return Math.round(base*(boss?(z.final?1.35:1.2):(z.final?1.1:1))/10)*10};
 const debtLimitFor=zi=>{const z=zoneOf(zi);return Math.round((3000+400*z.ci+(z.final?500:0)+500*tierOf(zi))*(hasBiz('banco')?1.5:1))};
 const tierName=t=>t?`Temporada élite ${ROMAN[t]||t}`:'Primera temporada';
 function zoneState(zi){return PROF.zones[zi]||(PROF.zones[zi]={stars:[false,false,false],lives:3,wins:0,tries:0})}
@@ -1978,13 +1978,22 @@ const SKILLS={
   inv:{n:'Inversor',i:'cash',d:t=>`Cobras ${t*25} € más al pasar por la SALIDA.`},
 };
 const BIZ=[
-  {id:'kiosko',n:'Quiosco de prensa',c:400,inc:15,d:'+15 € al empezar cada uno de tus turnos.'},
-  {id:'bar',n:'Bar de tapas',c:900,inc:30,d:'+30 € al empezar cada uno de tus turnos.'},
-  {id:'agencia',n:'Agencia inmobiliaria',c:1500,d:'Tus casas y hoteles cuestan un 10 % menos.'},
-  {id:'bufete',n:'Bufete de abogados',c:1800,d:'Los préstamos del banco solo cobran un 5 % de interés.'},
-  {id:'hotelplaya',n:'Hotel en la playa',c:2600,inc:60,d:'+60 € al empezar cada uno de tus turnos.'},
-  {id:'naviera',n:'Naviera',c:4000,d:'Empiezas cada partida con 300 € más.'},
-  {id:'banco',n:'Banco privado',c:6000,inc:100,d:'+100 € por turno y un límite de préstamo un 50 % mayor.'},
+  {id:'kiosko',n:'Quiosco de prensa',c:500,inc:10,d:'+10 € al empezar cada uno de tus turnos.'},
+  {id:'viajes',n:'Agencia de viajes',c:800,d:'Cobras 50 € más cada vez que pasas por la SALIDA.'},
+  {id:'bar',n:'Bar de tapas',c:1200,inc:20,d:'+20 € al empezar cada uno de tus turnos.'},
+  {id:'gestoria',n:'Gestoría',c:1500,d:'Los impuestos de las casillas te cuestan la mitad.'},
+  {id:'aseguradora',n:'Aseguradora',c:1800,d:'Las multas y reparaciones de las cartas te cuestan la mitad.'},
+  {id:'agencia',n:'Agencia inmobiliaria',c:2200,d:'Tus casas y hoteles cuestan un 10 % menos.'},
+  {id:'bufete',n:'Bufete de abogados',c:2600,d:'Los préstamos del banco solo cobran un 5 % de interés.'},
+  {id:'transportes',n:'Empresa de transportes',c:3000,d:'Tus estaciones cobran un 25 % más de alquiler.'},
+  {id:'electrica',n:'Compañía energética',c:3000,d:'Tus compañías de servicios cobran un 25 % más.'},
+  {id:'seguridad',n:'Empresa de seguridad',c:3500,d:'Las cartas ya no te pueden mandar a la cárcel.'},
+  {id:'hotelplaya',n:'Hotel en la playa',c:4500,inc:40,d:'+40 € al empezar cada uno de tus turnos.'},
+  {id:'constructora',n:'Constructora',c:5000,d:'Tus casas y hoteles cuestan otro 10 % menos (se suma a la agencia).'},
+  {id:'naviera',n:'Naviera',c:6000,d:'Empiezas cada partida con 300 € más que tus rivales.'},
+  {id:'lujo',n:'Inmobiliaria de lujo',c:8000,d:'Tus calles verdes y azules cobran un 15 % más.'},
+  {id:'inversores',n:'Club de inversores',c:9000,d:'Ganas un 25 % más de capital al conquistar una zona.'},
+  {id:'banco',n:'Banco privado',c:12000,inc:75,d:'+75 € por turno y el banco te presta un 50 % más.'},
 ];
 const EVENTS=[
   {id:'crisis',n:'Crisis económica',d:()=>'Todos los alquileres bajan un 25 %.'},
@@ -2029,7 +2038,7 @@ function houseCost(g,pid){
     if(G.imp.ev&&G.imp.ev.id==='boom')c*=.5;
     const p=P(pid);
     if(p.boss&&bossPow('build'))c*=1-bossPow('build');
-    if(!p.bot){c*=1-.1*skill('con');if(hasBiz('agencia'))c*=.9}
+    if(!p.bot){c*=1-.1*skill('con');if(hasBiz('agencia'))c*=.9;if(hasBiz('constructora'))c*=.9}
   }
   return Math.max(5,Math.round(c/5)*5);
 }
@@ -2037,12 +2046,13 @@ function impRent(i,r){
   if(!r)return r;const sq=BOARD[i],st=G.props[i],ev=G.imp.ev;
   if(ev){if(ev.id==='crisis')r*=.75;if(ev.id==='fiestas'&&sq.group===ev.g)r*=2;if(ev.id==='turismo'&&sq.type==='rail')r*=2;if(ev.id==='huelga'&&sq.type==='rail')r=0}
   if(st.owner!=null&&P(st.owner).boss&&bossPow('rent'))r*=1+bossPow('rent');
+  if(st.owner===0){if(sq.type==='rail'&&hasBiz('transportes'))r*=1.25;if(sq.type==='util'&&hasBiz('electrica'))r*=1.25;if((sq.group==='green'||sq.group==='darkblue')&&hasBiz('lujo'))r*=1.15}
   return Math.round(r);
 }
 function goSalary(p){
   let s=200;
   if(isImp()){
-    if(!p.bot)s+=25*skill('inv');
+    if(!p.bot){s+=25*skill('inv');if(hasBiz('viajes'))s+=50}
     if(p.boss&&bossPow('go'))s+=bossPow('go');
     if(G.imp.ev&&G.imp.ev.id==='paga')s+=100;
   }
@@ -2177,11 +2187,11 @@ function impFinish(win){
   const got=starResults(win),newStars=got.filter((v,k)=>v&&!zs.stars[k]).length;
   zs.stars=zs.stars.map((v,k)=>v||got[k]);
   const t=G.track||{};
-  const xp=(win?250:70)+80*newStars+6*(t.buys||0)+10*(t.builds||0)+Math.floor((t.rentIn||0)/25);
-  const debt=G.imp.debt||0,nw=win?realNW():Math.max(netWorth(h),(G.track&&G.track.maxNW)||0),cap=Math.max(win?100:50,Math.round((win?nw*.25:nw*.08)/10)*10);
+  const xp=(win?180:60)+60*newStars+6*(t.buys||0)+10*(t.builds||0)+Math.floor((t.rentIn||0)/25);
+  const debt=G.imp.debt||0,nw=win?realNW():Math.max(netWorth(h),(G.track&&G.track.maxNW)||0),cap=win?Math.min(700,Math.max(150,Math.round(nw*.08*(hasBiz('inversores')?1.25:1)/10)*10)):Math.min(200,Math.max(40,Math.round(nw*.03/10)*10));
   let lifeMsg='',lostCap=0;
   const replay=zi<PROF.progress,F0=fortune(),startM=G.imp.start||F0;let F1;
-  if(win){let gain=Math.round(Math.max(0,realNW()-startM)*.25/10)*10+100*newStars;gain=Math.min(1500,Math.max(debt?0:100,gain));if(replay)gain=Math.max(50,Math.round(gain/2/10)*10);F1=F0+gain}
+  if(win){let gain=Math.round(Math.max(0,realNW()-startM)*.12/10)*10+75*newStars;gain=Math.min(600,Math.max(debt?0:75,gain));if(replay)gain=Math.max(50,Math.round(gain/2/10)*10);F1=F0+gain}
   else F1=lossFortune(F0,debt);
   PROF.fortune=F1;
   if(win){zs.wins++;PROF.stats.bosses++;if(zi===PROF.progress)PROF.progress++;if(!G.imp.loanUsed)PROF.ach.sinprestamos=PROF.ach.sinprestamos||Date.now()}
@@ -2215,9 +2225,9 @@ function claimDaily(){
   if(!dailyReady())return;
   PROF.daily.streak=PROF.daily.last===yesterday()?PROF.daily.streak+1:1;
   PROF.daily.max=Math.max(PROF.daily.max,PROF.daily.streak);PROF.daily.last=today();
-  const cap=100+50*Math.min(PROF.daily.streak-1,6);PROF.capital+=cap;
+  const cap=50+25*Math.min(PROF.daily.streak-1,6);PROF.capital+=cap;
   const ups=addXP(30);checkAch(true);saveProf();Snd.win();
-  ask('Recompensa diaria',`<p class="lead">Día <b>${PROF.daily.streak}</b> seguido. Recibes <b class="gold">${fmt(cap)}</b> de capital y 30 XP${ups?` y subes al nivel ${PROF.level}`:''}.</p><p class="note" style="margin-top:10px">Vuelve mañana: cuantos más días seguidos, mayor es el premio (hasta 400 € al día).</p>`,[{label:'Genial',cls:'pri',v:1}]).then(openHub);
+  ask('Recompensa diaria',`<p class="lead">Día <b>${PROF.daily.streak}</b> seguido. Recibes <b class="gold">${fmt(cap)}</b> de capital y 30 XP${ups?` y subes al nivel ${PROF.level}`:''}.</p><p class="note" style="margin-top:10px">Vuelve mañana: cuantos más días seguidos, mayor es el premio (hasta 200 € al día).</p>`,[{label:'Genial',cls:'pri',v:1}]).then(openHub);
 }
 function openHub(){
   closeAll();$('#start').hidden=true;applyZone(null);
@@ -2278,7 +2288,7 @@ function zoneIntro(zi){
     <div class="fl" style="margin-top:16px">Tu partida</div>
     <div class="kv"><span>Dinero inicial</span><b>${fmt(startMoney)}</b></div>
     <div class="kv"><span>Rivales</span><b>${fmt(rivalMoney(zi,false))} cada uno · el jefe, ${fmt(rivalMoney(zi,true)+(z.boss.pw.cash||0))}</b></div>
-    <p class="note" style="margin-top:8px">Tu dinero inicial es tu <b>fortuna</b>: crece cuando ganas jugando bien y baja un poco si pierdes.</p>
+    <p class="note" style="margin-top:8px">Tu dinero inicial es tu <b>fortuna</b>. Los rivales se ponen a tu nivel: cuanto más alta es tu fortuna, más ricos empiezan ellos también.</p>
     <div class="kv"><span>Vidas en esta zona</span><b><span class="lives">${[0,1,2].map(k=>ic(k<zs.lives?'heartF':'heart','lv'+(k<zs.lives?' on':''))).join('')}</span></b></div>
     <p class="note" style="margin-top:12px">Si te quedas sin dinero, el banco te presta hasta ${fmt(debtLimitFor(zi))}. Solo pierdes si superas ese límite. Cada 6 rondas llega un evento de temporada que cambia las reglas.</p>`});
   m.btn('Volver','',()=>m.close());
@@ -2534,7 +2544,7 @@ function openHelp(key='basico'){
 
 Object.assign(HELP,{
   prestamos:['El banco',`<p>En Imperio puedes <b>hablar con el banco</b> cuando quieras durante tu turno, con el botón del edificio de columnas en la barra de abajo.</p><ul><li><b>Pedir un préstamo</b>: recibes el dinero al momento y debes ese dinero más un 10 % de interés (5 % si tienes el Bufete de abogados).</li><li><b>Límite</b>: el banco te presta hasta cierta cantidad según la zona. Si ya debes mucho, tendrás que devolver antes de volver a pedir.</li><li><b>Devolver</b>: cuando quieras, desde el banco o desde tus propiedades. Además, al pasar por la SALIDA devuelves sola la mitad de lo que cobras.</li><li>Si te quedas sin dinero para pagar algo, el banco también te ofrece un préstamo en ese momento.</li><li><b>Si pierdes debiendo dinero</b>, además de la bajada normal de tu fortuna (10 %), el banco se cobra la mitad de lo que le debías. Por eso a veces es mejor declararse en bancarrota a tiempo que endeudarse hasta el límite.</li></ul>`],
-  imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas 12 ciudades, de menos a más difíciles: València, Sevilla, Lisboa, Barcelona, Madrid, Roma, Berlín, Londres, París, Dubái, Tokio y Nueva York. Cada ciudad tiene 3 distritos, y el tercero es el del <b>jefe final</b> de la ciudad: más rico y con dos poderes a la vez. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p><b>Tu fortuna</b> es el dinero con el que empiezas cada partida (al principio, 1.500 €). Si ganas una zona, crece un 25 % de lo que hayas hecho crecer tu patrimonio en la partida, más 100 € por cada estrella nueva (como mínimo 100 € y como máximo 1.500 € por partida; la mitad si repites una zona ya ganada). Si pierdes, baja un 10 %, pero nunca de 1.200 €; si pierdes debiendo dinero al banco, se resta además la mitad de tu deuda (y el mínimo baja a 1.000 €). Los rivales empiezan con 1.500 € en la primera zona y 250 € más en cada zona siguiente.</p><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
+  imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas 12 ciudades, de menos a más difíciles: València, Sevilla, Lisboa, Barcelona, Madrid, Roma, Berlín, Londres, París, Dubái, Tokio y Nueva York. Cada ciudad tiene 3 distritos, y el tercero es el del <b>jefe final</b> de la ciudad: más rico y con dos poderes a la vez. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p><b>Tu fortuna</b> es el dinero con el que empiezas cada partida (al principio, 1.500 €). Si ganas una zona, crece un 12 % de lo que hayas hecho crecer tu patrimonio en la partida, más 75 € por cada estrella nueva (como mínimo 75 € y como máximo 600 € por partida; la mitad si repites una zona ya ganada). Si pierdes, baja un 10 %, pero nunca de 1.200 €; si pierdes debiendo dinero al banco, se resta además la mitad de tu deuda (y el mínimo baja a 1.000 €). Los rivales empiezan con tu misma fortuna (o con el mínimo de la ciudad, si es mayor); en el distrito final, un 10 % más, y los jefes todavía más.</p><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
   mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
   golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival. Si te pillan, <b>pierdes todo el botín del turno</b>. Si es la calle de un rival, además le pagas el alquiler entero; si no te llega, tendrás que hipotecar o vender, y si ni así puedes, quiebras.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> como en una partida normal, la partida sigue hasta que todos los rivales han quebrado. Completa grupos, construye casas y hoteles, y haz que caer en tus calles les salga muy caro. También puedes negociar como en el modo clásico.</p>`],
   camara:['La cámara',`<p>La cámara sigue al jugador que tiene el turno para que veas bien cada casilla.</p><ul><li><b>Seguir</b> (botón de la diana): acerca la vista y acompaña a la ficha que se mueve.</li><li><b>Tablero</b> (botón de la cuadrícula): muestra el tablero entero.</li><li>En el móvil puedes <b>pellizcar</b> para acercar o alejar y <b>arrastrar</b> para moverte. En el ordenador, usa la rueda del ratón y arrastra.</li><li>Doble toque: acerca la vista o vuelve al tablero entero.</li></ul><p>Si mueves la vista a mano, al empezar el siguiente turno vuelve al modo que elegiste.</p>`],
@@ -2841,10 +2851,12 @@ function boot(g){
   applyZone(g.mode==='imperio'&&g.imp?zoneOf(g.imp.zi):null);
   for(const i in g.props)delete g.props[i].pend;g.loot=null;
   g.track=g.track||{rentIn:0,buys:0,builds:0,streets:{}};
+  if(g.mode==='imperio'&&g.imp&&g.imp.bal!==2){const z=zoneOf(g.imp.zi),cb=1500+300*z.ci+600*tierOf(g.imp.zi),gap=Math.max(0,(g.imp.start||1500)-cb);if(gap)g.players.forEach(p=>{if(p.bot&&!p.out)p.money+=Math.round(gap*(p.boss?(z.final?1.35:1.2):(z.final?1.1:1))/10)*10});g.imp.bal=2;g._balMsg=gap>0}
   g.mode=g.mode||'clasico';renderLoot(null);$('#banner').classList.remove('show');$('#evChip').hidden=true;$('#toasts').innerHTML='';
   buildBoard();createTokens();buildPlayerRows();renderLog();render();layout();
   $('#diceSum').textContent='';setDie($('#d1'),1);setDie($('#d2'),1);
   if(G.started)say(`Partida recuperada. Ronda ${G.round}.`);
+  if(G._balMsg){delete G._balMsg;setTimeout(()=>toast('Los rivales se han puesto a tu nivel de fortuna','big','flag'),400)}
   gameLoop();
 }
 if(window.__PWA__&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
