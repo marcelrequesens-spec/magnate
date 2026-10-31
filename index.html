@@ -1405,8 +1405,19 @@ function botValue(p,i){
   }else if(sq.type==='rail')v*=1+.3*mine;else v*=mine?1.25:.85;
   return v;
 }
+const LOAN_APPETITE={agresivo:.75,constructor:.7,negociador:.45,equilibrado:.4,prudente:.2};
+function botLoanRoom(p){return isImp()?Math.max(0,Math.floor((debtLimit()-(p.debt||0))/1.1/50)*50):0}
+function botLoan(p,need,why){
+  if(!isImp()||p.out)return false;
+  const amt=Math.ceil(Math.max(50,need)/50)*50,cost=Math.round(amt*1.1);
+  if((p.debt||0)+cost>debtLimit())return false;
+  addMoney(p,amt);p.debt=(p.debt||0)+cost;
+  log(`${nm(p)} pide ${fmt(amt)} al banco${why?' '+why:''}. Debe ${fmt(p.debt)}`,'pay','bank');render();return true;
+}
+function botRepay(p,max){const r=Math.min(p.debt||0,max,p.money);if(r>0){addMoney(p,-r);p.debt-=r;log(`${nm(p)} devuelve ${fmt(r)} al banco${p.debt?`. Le quedan ${fmt(p.debt)}`:' y ya no debe nada'}`,'pay','bank')}}
 function botWantsBuy(p,i){
-  const pe=p.pers,price=BOARD[i].price;if(p.money<price)return false;
+  const pe=p.pers,price=BOARD[i].price;
+  if(p.money<price){const ap=LOAN_APPETITE[pe.arch]||.4;if(isImp()&&botValue(p,i)>=price*1.4&&(p.debt||0)<debtLimit()*ap&&botLoan(p,price-p.money+Math.min(150,pe.reserve),`para comprar ${BOARD[i].name}`))return true;return false}
   const keep=Math.max(pe.buyMin,Math.min(maxOppRent(p)*.5,600)),left=p.money-price;
   if(botValue(p,i)>=price*1.5)return left>=keep*.35;
   return left>=keep;
@@ -1417,6 +1428,7 @@ function botRaise(p,amt){
     const mine=propsOf(p.id),cand=mine.filter(i=>!mortErr(i));
     const loose=cand.filter(i=>!(BOARD[i].type==='street'&&ownsAll(p.id,BOARD[i].group))).sort((a,b)=>BOARD[a].price-BOARD[b].price);
     if(loose.length){mortgage(loose[0]);log(`${nm(p)} hipoteca ${pn(loose[0])} para conseguir dinero`,'good');continue}
+    if(isImp()&&botLoan(p,amt-p.money,'para pagar'))continue;
     const sellable=mine.filter(i=>!sellErr(i)).sort((a,b)=>GW[BOARD[a].group]-GW[BOARD[b].group]);
     if(sellable.length){sell(sellable[0]);log(`${nm(p)} vende un edificio de ${pn(sellable[0])}`,'good');continue}
     if(cand.length){cand.sort((a,b)=>BOARD[a].price-BOARD[b].price);mortgage(cand[0]);log(`${nm(p)} hipoteca ${pn(cand[0])} para conseguir dinero`,'good');continue}
@@ -1432,12 +1444,20 @@ function botJailChoice(p){
 function botBuild(p){
   const pe=p.pers,reserve=Math.max(pe.build,Math.min(maxOppRent(p)*.6,900));
   for(const i of propsOf(p.id)){const sq=BOARD[i];if(G.props[i].mort&&sq.type==='street'&&ownsAll(p.id,sq.group)&&p.money-unmortCost(i)>=reserve){unmortgage(i);log(`${nm(p)} levanta la hipoteca de ${pn(i)}`,'pay')}}
-  let n=0,hot=0,guard=0;const where=new Set();
-  while(guard++<80){
+  let n=0,hot=0;const where=new Set();
+  const loop=()=>{let guard=0;while(guard++<80){
     const c=propsOf(p.id).filter(i=>BOARD[i].type==='street'&&!buildErr(i));if(!c.length)break;
     c.sort((x,y)=>G.props[x].houses-G.props[y].houses||GW[BOARD[y].group]-GW[BOARD[x].group]||BOARD[y].price-BOARD[x].price);
     const i=c[0];if(p.money-houseCost(BOARD[i].group,p.id)<reserve)break;
     build(i);where.add(GROUPS[BOARD[i].group].n);if(G.props[i].houses===5)hot++;else n++;
+  }};
+  loop();
+  if(isImp()){
+    const ap=LOAN_APPETITE[pe.arch]||.4,wish=propsOf(p.id).filter(i=>BOARD[i].type==='street'&&['','No tienes dinero suficiente'].includes(buildErr(i))&&G.props[i].houses<4);
+    if(wish.length&&(p.debt||0)<debtLimit()*ap&&Math.random()<.85){
+      const hc=houseCost(BOARD[wish[0]].group,p.id),need=reserve+hc*Math.min(wish.length,3+Math.round(ap*4))-p.money;
+      if(need>=100&&botLoan(p,Math.min(need,botLoanRoom(p),Math.round(debtLimit()*ap)-(p.debt||0)),'para construir'))loop();
+    }
   }
   if(n||hot){log(`${nm(p)} construye ${n?n+(n>1?' casas':' casa'):''}${n&&hot?' y ':''}${hot?hot+(hot>1?' hoteles':' hotel'):''} en el grupo ${[...where].join(', ')}`,'build');Snd.build()}
   for(const i of propsOf(p.id)){if(G.props[i].mort&&p.money-unmortCost(i)>=reserve*1.6){unmortgage(i);log(`${nm(p)} levanta la hipoteca de ${pn(i)}`,'pay')}}
@@ -1520,6 +1540,7 @@ async function botManage(p){
   if(Math.random()<p.pers.tradeP)await botTryTrade(p);
   if(p.out)return;
   if(botBuild(p))await sleep(900);
+  if(isImp()&&p.debt){const free=p.money-Math.max(p.pers.reserve*1.5,maxOppRent(p)*.6,200);if(free>=100)botRepay(p,free)}
 }
 
 /* =================== tratos, deudas y quiebra =================== */
@@ -2060,6 +2081,7 @@ function goSalary(p){
   return s;
 }
 function afterGo(p,sal){
+  if(isImp()&&p.bot&&p.debt){botRepay(p,Math.floor(sal/2));return}
   if(!isImp()||p.bot||!G.imp.debt)return;
   const r=Math.min(G.imp.debt,Math.floor(sal/2),p.money);
   if(r>0){addMoney(p,-r);G.imp.debt-=r;log(`Devuelves ${fmt(r)} del préstamo. Te quedan ${fmt(G.imp.debt)} de deuda`,'pay','bank')}
@@ -2103,7 +2125,7 @@ function impManageHTML(p){
 function impPills(p){
   if(!isImp())return '';let s='';
   if(p.boss)s+=`<span class="pill boss"><svg class="ic"><use href="#t-crown"/></svg>Jefe</span>`;
-  if(!p.bot&&G.imp.debt)s+=`<span class="pill debt">${ic('bank')}Deuda ${fmt(G.imp.debt)}</span>`;
+  const dbt=p.bot?(p.debt||0):G.imp.debt;if(dbt&&!p.out)s+=`<span class="pill debt">${ic('bank')}Deuda ${fmt(dbt)}</span>`;
   return s;
 }
 function track(k,v=1){if(G){G.track=G.track||{rentIn:0,buys:0,builds:0,streets:{}};G.track[k]=(G.track[k]||0)+v}}
@@ -2546,7 +2568,7 @@ function openHelp(key='basico'){
 }
 
 Object.assign(HELP,{
-  prestamos:['El banco',`<p>En Imperio puedes <b>hablar con el banco</b> cuando quieras durante tu turno, con el botón del edificio de columnas en la barra de abajo.</p><ul><li><b>Pedir un préstamo</b>: recibes el dinero al momento y debes ese dinero más un 10 % de interés (5 % si tienes el Bufete de abogados).</li><li><b>Límite</b>: el banco te presta hasta cierta cantidad según la zona. Si ya debes mucho, tendrás que devolver antes de volver a pedir.</li><li><b>Devolver</b>: cuando quieras, desde el banco o desde tus propiedades. Además, al pasar por la SALIDA devuelves sola la mitad de lo que cobras.</li><li>Si te quedas sin dinero para pagar algo, el banco también te ofrece un préstamo en ese momento.</li><li><b>Si pierdes debiendo dinero</b>, además de la bajada normal de tu fortuna (10 %), el banco se cobra la mitad de lo que le debías. Por eso a veces es mejor declararse en bancarrota a tiempo que endeudarse hasta el límite.</li></ul>`],
+  prestamos:['El banco',`<p>En Imperio puedes <b>hablar con el banco</b> cuando quieras durante tu turno, con el botón del edificio de columnas en la barra de abajo.</p><ul><li><b>Pedir un préstamo</b>: recibes el dinero al momento y debes ese dinero más un 10 % de interés (5 % si tienes el Bufete de abogados).</li><li><b>Límite</b>: el banco te presta hasta cierta cantidad según la zona. Si ya debes mucho, tendrás que devolver antes de volver a pedir.</li><li><b>Devolver</b>: cuando quieras, desde el banco o desde tus propiedades. Además, al pasar por la SALIDA devuelves sola la mitad de lo que cobras.</li><li>Si te quedas sin dinero para pagar algo, el banco también te ofrece un préstamo en ese momento.</li><li><b>Los rivales también piden préstamos</b>, con el mismo límite y el mismo interés: para construir, para comprar una calle que les completa un grupo o para no quebrar. Los agresivos se endeudan más; los prudentes, poco. Su deuda aparece en su ficha.</li><li><b>Si pierdes debiendo dinero</b>, además de la bajada normal de tu fortuna (10 %), el banco se cobra la mitad de lo que le debías. Por eso a veces es mejor declararse en bancarrota a tiempo que endeudarse hasta el límite.</li></ul>`],
   imperio:['Modo Imperio',`<p>Imperio es una campaña larga. Conquistas 12 ciudades, de menos a más difíciles: València, Sevilla, Lisboa, Barcelona, Madrid, Roma, Berlín, Londres, París, Dubái, Tokio y Nueva York. Cada ciudad tiene 3 distritos, y el tercero es el del <b>jefe final</b> de la ciudad: más rico y con dos poderes a la vez. Cuando terminas todas empiezan las <b>temporadas élite</b>, más difíciles y sin final.</p><ul><li><b>Jefe de zona</b>: uno de los rivales es el jefe y tiene un poder especial. Pasas de zona cuando el jefe quiebra.</li><li><b>Difícil a la primera</b>: los rivales empiezan con más dinero. Aunque pierdas, ganas experiencia y capital para volver más fuerte.</li><li><b>Préstamos</b>: si te falta dinero, el banco te presta (con intereses) hasta un límite. Solo pierdes si lo superas.</li><li><b>3 vidas por zona</b>: si las pierdes todas, el banco se queda con una parte de tu capital y se recargan.</li><li><b>3 estrellas</b>: ganar, ganar en 30 rondas o menos y un reto propio de cada zona.</li><li><b>Eventos de temporada</b>: cada 6 rondas algo cambia las reglas (crisis, boom, fiestas…).</li></ul><p><b>Tu fortuna</b> es el dinero con el que empiezas cada partida (al principio, 1.500 €). Si ganas una zona, crece un 12 % de lo que hayas hecho crecer tu patrimonio en la partida, más 75 € por cada estrella nueva (como mínimo 75 € y como máximo 600 € por partida; la mitad si repites una zona ya ganada). Si pierdes, baja un 10 %, pero nunca de 1.200 €; si pierdes debiendo dinero al banco, se resta además la mitad de tu deuda (y el mínimo baja a 1.000 €). Los rivales empiezan con tu misma fortuna (o con el mínimo de la ciudad, si es mayor); en el distrito final, un 10 % más, y los jefes todavía más.</p><p>Con la experiencia subes de nivel y ganas puntos para el <b>árbol de mejoras</b>. Con el <b>capital</b> compras <b>negocios</b> que te dan ingresos en todas las partidas. Además hay álbum de calles, logros, estilos desbloqueables, recompensa diaria y estadísticas.</p>`],
   mejoras:['Árbol de mejoras',`<p>Cada vez que subes de nivel ganas un punto. Gástalo en una de las tres ramas; cada rama tiene 4 niveles y las mejoras son permanentes en Imperio:</p><ul><li><b>Constructor</b>: casas y hoteles un 10 % más baratos por nivel.</li><li><b>Negociador</b>: los rivales aceptan tratos menos favorables para ellos.</li><li><b>Inversor</b>: 25 € más al pasar por la SALIDA por nivel.</li></ul><p>Cuando completes todo, cada punto extra se puede canjear por 300 € de capital.</p>`],
   golpe:['Modo El Golpe',`<p>En El Golpe no se compra: se roba. En tu turno puedes tirar los dados <b>todas las veces que quieras</b>, y cada casilla suma algo a tu <b>botín</b>:</p><ul><li><b>Calle libre</b>: entra en el botín.</li><li><b>Tu propia calle</b>: cobras su alquiler.</li><li><b>SALIDA</b>: +200 €. <b>Parking</b>: +100 €. <b>Dobles</b>: +50 €.</li><li><b>Suerte y Caja de Comunidad</b>: una carta de golpe, que puede ayudarte o fastidiarte.</li></ul><p><b>Te pillan</b> si caes en un <b>control policial</b> (las casillas rojas) o en una calle de un rival. Si te pillan, <b>pierdes todo el botín del turno</b>. Si es la calle de un rival, además le pagas el alquiler entero; si no te llega, tendrás que hipotecar o vender, y si ni así puedes, quiebras.</p><p>Cuando quieras, <b>plántate</b>: el dinero y las calles del botín pasan a ser tuyos. En pantalla verás el riesgo de que te pillen en la próxima tirada.</p><p><b>Cómo se gana:</b> como en una partida normal, la partida sigue hasta que todos los rivales han quebrado. Completa grupos, construye casas y hoteles, y haz que caer en tus calles les salga muy caro. También puedes negociar como en el modo clásico.</p>`],
