@@ -1992,7 +1992,8 @@ const bossNW=()=>{const b=G.players.find(p=>p.boss);return b&&!b.out?netWorth(b)
 const realNW=()=>netWorth(G.players[0])-((G.imp&&G.imp.debt)||0);
 const lossFortune=(F0,debt)=>Math.max(debt?1000:1200,Math.round(F0*.9/10)*10-Math.round(debt*.5/10)*10);
 const fortune=()=>Math.max(1200,PROF.fortune||1500);
-const rivalMoney=(zi,boss)=>{const z=zoneOf(zi),base=Math.max(1500+300*z.ci+600*tierOf(zi),fortune());return Math.round(base*(boss?(z.final?1.35:1.2):(z.final?1.1:1))/10)*10};
+const rivalRamp=zi=>tierOf(zi)?1:Math.min(1,zoneOf(zi).ci/4);
+const rivalMoney=(zi,boss)=>{const z=zoneOf(zi),base=Math.max(1500+300*z.ci+600*tierOf(zi),fortune()),r=rivalRamp(zi);return Math.round(base*(boss?(z.final?1.1+.25*r:1+.2*r):(z.final?1+.1*r:1))/10)*10};
 const debtLimitFor=zi=>{const z=zoneOf(zi);return Math.round((3000+400*z.ci+(z.final?500:0)+500*tierOf(zi))*(hasBiz('banco')?1.5:1))};
 const tierName=t=>t?`Temporada élite ${ROMAN[t]||t}`:'Primera temporada';
 function zoneState(zi){return PROF.zones[zi]||(PROF.zones[zi]={stars:[false,false,false],lives:3,wins:0,tries:0})}
