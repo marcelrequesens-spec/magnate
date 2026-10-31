@@ -2101,7 +2101,7 @@ function houseCost(g,pid){
   return Math.max(5,Math.round(c/5)*5);
 }
 /* Desde la ronda 40 los alquileres suben un 3 % cada ronda */
-const infl=()=>{const r=(G&&G.round)||0;return r<=40?1:1+.03*(r-40)};
+const infl=()=>{const r=effRound();return r<=40?1:1+.03*(r-40)};
 function impRent(i,r){
   if(!r)return r;const sq=BOARD[i],st=G.props[i],ev=G.imp.ev;
   if(ev){if(ev.id==='crisis')r*=.75;if(ev.id==='fiestas'&&sq.group===ev.g)r*=2;if(ev.id==='turismo'&&sq.type==='rail')r*=2;if(ev.id==='huelga'&&sq.type==='rail')r=0}
@@ -2126,7 +2126,8 @@ function afterGo(p,sal){
   const over=G.imp.debt>debtLimit(),r=Math.min(G.imp.debt,over?sal:Math.floor(sal/2),p.money);
   if(r>0){addMoney(p,-r);G.imp.debt-=r;log(`${over?'Debes más de tu límite: el banco se queda todo el sueldo. ':''}Devuelves ${fmt(r)} del préstamo. Te quedan ${fmt(G.imp.debt)} de deuda`,'pay','bank')}
 }
-const credF=()=>{const r=(G&&G.round)||0;return r<=30?1:Math.max(.4,1-.02*(r-30))};
+const effRound=()=>G?Math.max(0,(G.round||0)-((G.imp&&G.imp.r0)||0)):0;
+const credF=()=>{const r=effRound();return r<=30?1:Math.max(.4,1-.02*(r-30))};
 const debtLimit=()=>Math.round(debtLimitFor(G.imp.zi)*credF()/50)*50;
 /* Interés de un préstamo nuevo: sube cuanto más debes */
 const loanRate=(debt,human)=>{const L=debtLimit(),f=L>0?(debt||0)/L:1;let r=f<1/3?.10:f<2/3?.15:.20;if(human&&hasBiz('bufete'))r/=2;return r};
@@ -2153,7 +2154,7 @@ function openBank(p){
       <div class="kv"><span>Te puedo prestar hasta</span><b>${fmt(max)}</b></div>
       <div class="kv"><span>Interés del próximo préstamo</span><b>${rate} %</b></div>
       <div class="kv"><span>Intereses en cada SALIDA</span><b>${hasBiz('bufete')?'2,5':'5'} % de lo que debes</b></div>
-      <div class="kv"><span>Tu límite</span><b>${fmt(debtLimit())}${G.round>30?' · bajando':''}</b></div>
+      <div class="kv"><span>Tu límite</span><b>${fmt(debtLimit())}${effRound()>30?' · bajando':''}</b></div>
       <div class="fl" style="margin-top:16px">Pedir un préstamo</div>
       ${max>0?`<div class="loanbtns">${opts.map(a=>`<button class="btn" type="button" data-l="${a}"><b>${a===max&&![100,250,500,1000,2000].includes(a)?'Máximo · ':''}${fmt(a)}</b><small>Devuelves ${back(a)}</small></button>`).join('')}</div>`:'<p class="note">Has llegado al límite. Devuelve parte de la deuda y podrás volver a pedir.</p>'}
       <div class="fl" style="margin-top:16px">Devolver</div>
@@ -2224,7 +2225,7 @@ function newImperioGame(zi){
   const z=zoneOf(zi),tier=tierOf(zi),lv=zi%ZONES.length;
   applyZone(z);
   const g=newGame(PROF.name||'Marcel',PROF.token||'hat','imperio');
-  g.imp={start:fortune()+(hasBiz('naviera')?300:0),zi,zid:z.id,tier,pw:z.boss.pw,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0};
+  g.imp={start:fortune()+(hasBiz('naviera')?300:0),zi,zid:z.id,tier,pw:z.boss.pw,ev:null,evRound:0,nextEv:4,debt:0,loanUsed:false,mortUsed:false,maxRails:0,cv:1,r0:0};
   g.track={rentIn:0,buys:0,builds:0,streets:{}};
   const boss=g.players[1];boss.name=z.boss.name;boss.boss=true;boss.pers=makePers(z.final?'agresivo':['constructor','equilibrado','negociador'][z.ci%3]);if(z.final){boss.pers.bid=+(boss.pers.bid*1.08).toFixed(2);boss.pers.build=Math.round(boss.pers.build*.8)}
   g.players.forEach(p=>{
@@ -2580,10 +2581,11 @@ async function gameLoop(){
     if(await checkEnd())return;
     nextTurn();
     if(G.mode==='imperio'&&G.imp&&G.turn===G.firstTurn){
-      if(G.round===31)log(`El banco endurece el crédito: desde ahora el límite de préstamo baja cada ronda (ahora ${fmt(debtLimit())})`,'big','bank');
-      else if(G.round>31&&G.round<=60&&G.round%10===0)log(`El banco sigue apretando: el límite de préstamo baja a ${fmt(debtLimit())}`,'big','bank');
-      if(G.round===41)log('Los precios se disparan: desde ahora los alquileres suben un 3 % cada ronda','big','flag');
-      else if(G.round>41&&G.round%10===0)log(`Los alquileres ya están un ${Math.round((infl()-1)*100)} % más caros que al principio`,'big','flag');
+      const er=effRound();
+      if(er===31)log(`El banco endurece el crédito: desde ahora el límite de préstamo baja cada ronda (ahora ${fmt(debtLimit())})`,'big','bank');
+      else if(er>31&&er<=60&&er%10===0)log(`El banco sigue apretando: el límite de préstamo baja a ${fmt(debtLimit())}`,'big','bank');
+      if(er===41)log('Los precios se disparan: desde ahora los alquileres suben un 3 % cada ronda','big','flag');
+      else if(er>41&&er%10===0)log(`Los alquileres ya están un ${Math.round((infl()-1)*100)} % más caros que al principio`,'big','flag');
     }
     save();
   }
@@ -2939,6 +2941,7 @@ function boot(g){
   applyZone(g.mode==='imperio'&&g.imp?zoneOf(g.imp.zi):null);
   for(const i in g.props)delete g.props[i].pend;g.loot=null;
   g.track=g.track||{rentIn:0,buys:0,builds:0,streets:{}};
+  if(g.mode==='imperio'&&g.imp&&g.imp.cv!==1){g.imp.r0=Math.max(0,(g.round||1)-1);g.imp.cv=1}
   if(g.mode==='imperio'&&g.imp&&g.imp.bal!==2){const z=zoneOf(g.imp.zi),cb=1500+300*z.ci+600*tierOf(g.imp.zi),gap=Math.max(0,(g.imp.start||1500)-cb);if(gap)g.players.forEach(p=>{if(p.bot&&!p.out)p.money+=Math.round(gap*(p.boss?(z.final?1.35:1.2):(z.final?1.1:1))/10)*10});g.imp.bal=2;g._balMsg=gap>0}
   g.mode=g.mode||'clasico';renderLoot(null);$('#banner').classList.remove('show');$('#evChip').hidden=true;$('#toasts').innerHTML='';
   buildBoard();createTokens();buildPlayerRows();renderLog();render();layout();
